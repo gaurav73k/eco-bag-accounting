@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Filter, Download, Calendar } from 'lucide-react';
+import { 
+  PlusCircle, 
+  Filter, 
+  Download, 
+  Calendar,
+  FileText,
+  Search
+} from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock data
 const transactions = [
@@ -25,6 +40,50 @@ const transactions = [
 ];
 
 const DayBook: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentTab, setCurrentTab] = useState('all');
+  const { toast } = useToast();
+
+  // Filter transactions based on search term and current tab
+  const filteredTransactions = transactions.filter(transaction => {
+    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (currentTab === 'all') return matchesSearch;
+    return matchesSearch && transaction.type === currentTab;
+  });
+
+  const handleExport = (format: string) => {
+    try {
+      exportToCSV(
+        filteredTransactions.map(t => ({
+          Date: t.date,
+          Description: t.description,
+          Category: t.category,
+          Amount: t.amount,
+          Type: t.type
+        })),
+        `daybook-transactions-${getFormattedDate()}`
+      );
+      
+      toast({
+        title: "Export Successful",
+        description: `Transactions exported as ${format.toUpperCase()} file.`,
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting the transactions.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleTabChange = (value: string) => {
+    setCurrentTab(value);
+  };
+
   return (
     <Layout>
       <div className="animate-fade-in">
@@ -32,10 +91,26 @@ const DayBook: React.FC = () => {
           title="Day Book" 
           description="Track daily income and expenses"
         >
-          <Button size="sm">
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New Entry
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              New Entry
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </PageTitle>
         
         <div className="space-y-6">
@@ -48,15 +123,11 @@ const DayBook: React.FC = () => {
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">June 2023</span>
                   </div>
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                  </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="all" className="mb-6">
+              <Tabs defaultValue="all" className="mb-6" onValueChange={handleTabChange}>
                 <div className="flex items-center justify-between mb-4">
                   <TabsList>
                     <TabsTrigger value="all">All Transactions</TabsTrigger>
@@ -68,6 +139,9 @@ const DayBook: React.FC = () => {
                     <Input 
                       placeholder="Search transactions..." 
                       className="max-w-[200px]"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      leftIcon={<Search className="h-4 w-4" />}
                     />
                     <Select>
                       <SelectTrigger className="w-[140px]">
@@ -96,7 +170,7 @@ const DayBook: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions.map((transaction) => (
+                        {filteredTransactions.map((transaction) => (
                           <TableRow key={transaction.id}>
                             <TableCell>{transaction.date}</TableCell>
                             <TableCell>{transaction.description}</TableCell>
@@ -113,6 +187,13 @@ const DayBook: React.FC = () => {
                             </TableCell>
                           </TableRow>
                         ))}
+                        {filteredTransactions.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8">
+                              No transactions found. Try adjusting your search.
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -130,7 +211,7 @@ const DayBook: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions
+                        {filteredTransactions
                           .filter(t => t.type === 'income')
                           .map((transaction) => (
                             <TableRow key={transaction.id}>
@@ -140,6 +221,13 @@ const DayBook: React.FC = () => {
                               <TableCell className="text-right">Rs. {transaction.amount.toLocaleString()}</TableCell>
                             </TableRow>
                           ))}
+                        {filteredTransactions.filter(t => t.type === 'income').length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-8">
+                              No income transactions found.
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -157,7 +245,7 @@ const DayBook: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions
+                        {filteredTransactions
                           .filter(t => t.type === 'expense')
                           .map((transaction) => (
                             <TableRow key={transaction.id}>
@@ -167,6 +255,13 @@ const DayBook: React.FC = () => {
                               <TableCell className="text-right">Rs. {transaction.amount.toLocaleString()}</TableCell>
                             </TableRow>
                           ))}
+                        {filteredTransactions.filter(t => t.type === 'expense').length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-8">
+                              No expense transactions found.
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </div>
