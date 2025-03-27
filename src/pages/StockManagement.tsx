@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -137,7 +137,7 @@ const StockManagement: React.FC = () => {
                     <TabsTrigger value="rawMaterials">Raw Materials</TabsTrigger>
                     <TabsTrigger value="finishedGoods">Finished Goods</TabsTrigger>
                   </TabsList>
-                  <Input 
+                  <InputWithIcon 
                     placeholder="Search inventory..." 
                     className="max-w-[200px]"
                     value={searchTerm}

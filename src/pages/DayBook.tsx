@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -136,7 +136,7 @@ const DayBook: React.FC = () => {
                   </TabsList>
                   
                   <div className="flex items-center gap-2">
-                    <Input 
+                    <InputWithIcon 
                       placeholder="Search transactions..." 
                       className="max-w-[200px]"
                       value={searchTerm}

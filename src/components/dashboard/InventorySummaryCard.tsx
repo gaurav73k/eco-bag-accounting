@@ -69,9 +69,6 @@ const InventorySummaryCard: React.FC<InventorySummaryCardProps> = ({
                 <div className="flex items-center gap-2">
                   <Progress 
                     value={stockPercentage} 
-                    className="h-2" 
-                    // Fixed: removed indicatorClassName which doesn't exist on Progress component
-                    // and use className with the utility function to apply custom color
                     className={cn("h-2", getProgressColor(item.status))}
                   />
                   <span className="text-xs text-muted-foreground w-10 text-right">
