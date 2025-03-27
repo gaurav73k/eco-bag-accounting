@@ -2,25 +2,58 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Eye, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
-interface Transaction {
+export interface Transaction {
   id: string;
   date: string;
   description: string;
   amount: number;
   type: 'income' | 'expense';
+  entityId?: string;
+  entityType?: 'customer' | 'supplier' | 'employee' | 'inventory';
 }
 
 interface RecentTransactionsCardProps {
   transactions: Transaction[];
   className?: string;
+  showViewButtons?: boolean;
+  onEdit?: (transaction: Transaction) => void;
+  onView?: (transaction: Transaction) => void;
 }
 
 const RecentTransactionsCard: React.FC<RecentTransactionsCardProps> = ({ 
   transactions,
-  className 
+  className,
+  showViewButtons = false,
+  onEdit,
+  onView
 }) => {
+  const navigate = useNavigate();
+
+  const handleView = (transaction: Transaction) => {
+    if (onView) {
+      onView(transaction);
+    } else if (transaction.entityType && transaction.entityId) {
+      // Navigate to the appropriate detail page based on entity type
+      switch (transaction.entityType) {
+        case 'customer':
+        case 'supplier':
+          navigate(`/ledger/${transaction.entityType}/${transaction.entityId}`);
+          break;
+        case 'inventory':
+          navigate(`/inventory/product/${transaction.entityId}`);
+          break;
+        case 'employee':
+          navigate(`/payroll/employee/${transaction.entityId}`);
+          break;
+      }
+    }
+  };
+
   return (
     <Card className={cn("overflow-hidden", className)}>
       <CardHeader className="pb-2">
@@ -49,6 +82,29 @@ const RecentTransactionsCard: React.FC<RecentTransactionsCardProps> = ({
                 <Badge variant={transaction.type === 'income' ? "default" : "destructive"}>
                   {transaction.type === 'income' ? 'Income' : 'Expense'}
                 </Badge>
+                
+                {showViewButtons && (
+                  <div className="flex gap-1 ml-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleView(transaction)}
+                      className="h-8 w-8"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    {onEdit && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => onEdit(transaction)} 
+                        className="h-8 w-8"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}

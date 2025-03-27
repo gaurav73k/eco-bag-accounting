@@ -1,6 +1,8 @@
 
 import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { ChevronLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface PageTitleProps {
   title: string;
@@ -8,6 +10,8 @@ interface PageTitleProps {
   children?: React.ReactNode;
   className?: string;
   icon?: ReactNode;
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
 
 const PageTitle: React.FC<PageTitleProps> = ({ 
@@ -15,11 +19,32 @@ const PageTitle: React.FC<PageTitleProps> = ({
   description,
   children,
   className,
-  icon
+  icon,
+  showBackButton,
+  onBack
 }) => {
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
+    }
+  };
+
   return (
     <div className={cn("mb-8 flex flex-col gap-1 md:flex-row md:items-center md:justify-between", className)}>
       <div className="flex items-center gap-2">
+        {showBackButton && (
+          <button 
+            onClick={handleBack}
+            className="p-1 rounded-full hover:bg-muted mr-1"
+            aria-label="Go back"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
         {icon && <div className="text-primary">{icon}</div>}
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
