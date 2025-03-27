@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from './Logo';
-import { Bell, Settings, User } from 'lucide-react';
+import { Bell, Settings, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,8 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Header: React.FC = () => {
+  const { user, logout } = useAuth();
+  
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-effect border-b border-border/40 animate-fade-in">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -34,13 +37,19 @@ const Header: React.FC = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 animate-scale-in">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                {user?.name || 'My Account'}
+                {user?.email && (
+                  <p className="text-xs text-muted-foreground mt-1">{user.email}</p>
+                )}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>
+                <LogOut className="mr-2 h-4 w-4" />
                 <span className="text-destructive">Logout</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
