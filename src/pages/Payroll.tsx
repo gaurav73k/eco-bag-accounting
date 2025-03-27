@@ -134,6 +134,11 @@ const Payroll: React.FC = () => {
   // Calculate total payroll amount for the month
   const totalPayroll = payrollData.reduce((total, entry) => total + entry.netSalary, 0);
 
+  // Safe function to format numbers with toLocaleString
+  const formatNumber = (value: number | undefined): string => {
+    return value !== undefined ? value.toLocaleString() : '0';
+  };
+
   return (
     <Layout>
       <div className="animate-fade-in">
@@ -277,11 +282,11 @@ const Payroll: React.FC = () => {
                             <div className="text-xs text-muted-foreground">{entry.employeeId}</div>
                           </TableCell>
                           <TableCell>{entry.month}</TableCell>
-                          <TableCell className="text-right">Rs. {entry.basicSalary.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">Rs. {entry.overtime.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">Rs. {entry.bonus.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">Rs. {entry.deductions.toLocaleString()}</TableCell>
-                          <TableCell className="text-right font-bold">Rs. {entry.netSalary.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">Rs. {formatNumber(entry.basicSalary)}</TableCell>
+                          <TableCell className="text-right">Rs. {formatNumber(entry.overtime)}</TableCell>
+                          <TableCell className="text-right">Rs. {formatNumber(entry.bonus)}</TableCell>
+                          <TableCell className="text-right">Rs. {formatNumber(entry.deductions)}</TableCell>
+                          <TableCell className="text-right font-bold">Rs. {formatNumber(entry.netSalary)}</TableCell>
                           <TableCell>
                             <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               {entry.status === 'paid' ? 'Paid' : 'Pending'}
@@ -332,7 +337,7 @@ const Payroll: React.FC = () => {
                             </span>
                           </TableCell>
                           <TableCell>{employee.joiningDate}</TableCell>
-                          <TableCell className="text-right font-medium">Rs. {employee.basicSalary.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium">Rs. {formatNumber(employee.basicSalary)}</TableCell>
                         </TableRow>
                       ))}
                       {filteredData.length === 0 && (
