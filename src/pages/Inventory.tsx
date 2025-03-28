@@ -8,6 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import InventoryForm from '@/components/forms/InventoryForm';
+import HistoryTracker from '@/components/HistoryTracker';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   PlusCircle, 
   ClipboardList, 
@@ -15,19 +18,34 @@ import {
   Search, 
   Filter,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Edit,
+  Trash2,
+  MoreHorizontal
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Mock data for inventory
-const rawMaterials = [
+const initialRawMaterials = [
   { id: 'RM-001', name: 'Non-woven PP Fabric (White)', stock: 250, unit: 'kg', maxStock: 500, minStock: 100, status: 'normal', location: 'Warehouse A' },
   { id: 'RM-002', name: 'Non-woven PP Fabric (Green)', stock: 50, unit: 'kg', maxStock: 300, minStock: 75, status: 'low', location: 'Warehouse A' },
   { id: 'RM-003', name: 'Thread Spools (White)', stock: 180, unit: 'pcs', maxStock: 200, minStock: 50, status: 'normal', location: 'Storage B2' },
@@ -38,7 +56,7 @@ const rawMaterials = [
   { id: 'RM-008', name: 'Packaging Materials', stock: 600, unit: 'sets', maxStock: 1000, minStock: 300, status: 'normal', location: 'Packaging Area' },
 ];
 
-const finishedGoods = [
+const initialFinishedGoods = [
   { id: 'FG-001', name: 'W-Cut Bags (Small)', stock: 2500, unit: 'pcs', reorderLevel: 1000, status: 'normal', location: 'Finished Goods A1' },
   { id: 'FG-002', name: 'W-Cut Bags (Medium)', stock: 1800, unit: 'pcs', reorderLevel: 1000, status: 'normal', location: 'Finished Goods A1' },
   { id: 'FG-003', name: 'W-Cut Bags (Large)', stock: 650, unit: 'pcs', reorderLevel: 800, status: 'low', location: 'Finished Goods A2' },
@@ -50,13 +68,21 @@ const finishedGoods = [
 ];
 
 // Identify low-stock items
-const lowStockRawMaterials = rawMaterials.filter(item => item.status === 'low');
-const lowStockFinishedGoods = finishedGoods.filter(item => item.status === 'low');
+const lowStockRawMaterials = initialRawMaterials.filter(item => item.status === 'low');
+const lowStockFinishedGoods = initialFinishedGoods.filter(item => item.status === 'low');
 
 const Inventory: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTab, setCurrentTab] = useState('raw');
-  const { toast } = useToast();
+  const [rawMaterials, setRawMaterials] = useState(initialRawMaterials);
+  const [finishedGoods, setFinishedGoods] = useState(initialFinishedGoods);
+  const { toast: hookToast } = useToast();
+
+  // Dialog states
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentItem, setCurrentItem] = useState<any>(null);
 
   // Filter inventory based on search term and current tab
   const filteredInventory = currentTab === 'raw' 
@@ -70,6 +96,47 @@ const Inventory: React.FC = () => {
         item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.location.toLowerCase().includes(searchTerm.toLowerCase())
       );
+
+  const handleAddItem = (newItem: any) => {
+    if (currentTab === 'raw') {
+      setRawMaterials(prev => [...prev, newItem]);
+    } else {
+      setFinishedGoods(prev => [...prev, newItem]);
+    }
+    
+    setIsAddDialogOpen(false);
+    toast.success(`New ${currentTab === 'raw' ? 'raw material' : 'finished good'} added successfully`);
+  };
+
+  const handleEditItem = (updatedItem: any) => {
+    if (currentTab === 'raw') {
+      setRawMaterials(prev => 
+        prev.map(item => item.id === updatedItem.id ? updatedItem : item)
+      );
+    } else {
+      setFinishedGoods(prev => 
+        prev.map(item => item.id === updatedItem.id ? updatedItem : item)
+      );
+    }
+    
+    setIsEditDialogOpen(false);
+    setCurrentItem(null);
+    toast.success("Item updated successfully");
+  };
+
+  const handleDeleteItem = () => {
+    if (!currentItem) return;
+    
+    if (currentTab === 'raw') {
+      setRawMaterials(prev => prev.filter(item => item.id !== currentItem.id));
+    } else {
+      setFinishedGoods(prev => prev.filter(item => item.id !== currentItem.id));
+    }
+    
+    setIsDeleteDialogOpen(false);
+    setCurrentItem(null);
+    toast.success("Item deleted successfully");
+  };
 
   const handleExport = (format: string) => {
     try {
@@ -102,16 +169,13 @@ const Inventory: React.FC = () => {
         );
       }
       
-      toast({
-        title: "Export Successful",
-        description: `Inventory data exported as ${format.toUpperCase()} file.`,
+      toast.success("Export Successful", {
+        description: `Inventory data exported as ${format.toUpperCase()} file.`
       });
     } catch (error) {
       console.error("Export error:", error);
-      toast({
-        title: "Export Failed",
-        description: "There was an error exporting the inventory data.",
-        variant: "destructive"
+      toast.error("Export Failed", {
+        description: "There was an error exporting the inventory data."
       });
     }
   };
@@ -125,7 +189,7 @@ const Inventory: React.FC = () => {
           icon={<ClipboardList className="h-6 w-6" />}
         >
           <div className="flex gap-2">
-            <Button size="sm">
+            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
               <PlusCircle className="h-4 w-4 mr-2" />
               Add Item
             </Button>
@@ -143,6 +207,7 @@ const Inventory: React.FC = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <HistoryTracker />
           </div>
         </PageTitle>
         
@@ -157,7 +222,7 @@ const Inventory: React.FC = () => {
                 {rawMaterials.length} types
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {lowStockRawMaterials.length} items low on stock
+                {rawMaterials.filter(item => item.status === 'low').length} items low on stock
               </p>
             </CardContent>
           </Card>
@@ -172,7 +237,7 @@ const Inventory: React.FC = () => {
                 {finishedGoods.length} types
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {lowStockFinishedGoods.length} items low on stock
+                {finishedGoods.filter(item => item.status === 'low').length} items low on stock
               </p>
             </CardContent>
           </Card>
@@ -186,18 +251,23 @@ const Inventory: React.FC = () => {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
                 <span className="text-sm font-medium">
-                  {lowStockRawMaterials.length + lowStockFinishedGoods.length} items below minimum stock level
+                  {rawMaterials.filter(item => item.status === 'low').length + 
+                   finishedGoods.filter(item => item.status === 'low').length} items below minimum stock level
                 </span>
               </div>
               <div className="mt-2 text-sm">
                 <span className="font-medium">Critical items: </span>
-                {[...lowStockRawMaterials, ...lowStockFinishedGoods].slice(0, 3).map((item, idx) => (
+                {[...rawMaterials.filter(item => item.status === 'low'), 
+                  ...finishedGoods.filter(item => item.status === 'low')].slice(0, 3).map((item, idx) => (
                   <span key={item.id} className="text-muted-foreground">
-                    {item.name}{idx < Math.min(3, lowStockRawMaterials.length + lowStockFinishedGoods.length) - 1 ? ', ' : ''}
+                    {item.name}{idx < Math.min(3, rawMaterials.filter(item => item.status === 'low').length + 
+                    finishedGoods.filter(item => item.status === 'low').length) - 1 ? ', ' : ''}
                   </span>
                 ))}
-                {lowStockRawMaterials.length + lowStockFinishedGoods.length > 3 && 
-                  <span className="text-muted-foreground"> and {lowStockRawMaterials.length + lowStockFinishedGoods.length - 3} more</span>
+                {rawMaterials.filter(item => item.status === 'low').length + 
+                 finishedGoods.filter(item => item.status === 'low').length > 3 && 
+                  <span className="text-muted-foreground"> and {rawMaterials.filter(item => item.status === 'low').length + 
+                  finishedGoods.filter(item => item.status === 'low').length - 3} more</span>
                 }
               </div>
             </CardContent>
@@ -253,6 +323,7 @@ const Inventory: React.FC = () => {
                         <TableHead className="text-center">Max Stock</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Location</TableHead>
+                        <TableHead className="w-[80px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -273,11 +344,42 @@ const Inventory: React.FC = () => {
                             </span>
                           </TableCell>
                           <TableCell>{item.location}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setCurrentItem(item);
+                                    setIsEditDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setCurrentItem(item);
+                                    setIsDeleteDialogOpen(true);
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
                         </TableRow>
                       ))}
                       {filteredInventory.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
+                          <TableCell colSpan={8} className="text-center py-8">
                             No items found. Try adjusting your search.
                           </TableCell>
                         </TableRow>
@@ -298,6 +400,7 @@ const Inventory: React.FC = () => {
                         <TableHead className="text-center">Reorder Level</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Location</TableHead>
+                        <TableHead className="w-[80px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -317,11 +420,42 @@ const Inventory: React.FC = () => {
                             </span>
                           </TableCell>
                           <TableCell>{item.location}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setCurrentItem(item);
+                                    setIsEditDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setCurrentItem(item);
+                                    setIsDeleteDialogOpen(true);
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
                         </TableRow>
                       ))}
                       {filteredInventory.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8">
+                          <TableCell colSpan={7} className="text-center py-8">
                             No items found. Try adjusting your search.
                           </TableCell>
                         </TableRow>
@@ -334,6 +468,59 @@ const Inventory: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Item Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Add New {currentTab === 'raw' ? 'Raw Material' : 'Finished Good'}</DialogTitle>
+          </DialogHeader>
+          <InventoryForm 
+            type={currentTab === 'raw' ? 'raw' : 'finished'} 
+            onSubmit={handleAddItem} 
+            onCancel={() => setIsAddDialogOpen(false)} 
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Item Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Edit {currentTab === 'raw' ? 'Raw Material' : 'Finished Good'}</DialogTitle>
+          </DialogHeader>
+          {currentItem && (
+            <InventoryForm 
+              type={currentTab === 'raw' ? 'raw' : 'finished'} 
+              onSubmit={handleEditItem} 
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setCurrentItem(null);
+              }} 
+              initialData={currentItem}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the item
+              {currentItem && ` "${currentItem.name}"`} from your inventory.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setCurrentItem(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteItem} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };

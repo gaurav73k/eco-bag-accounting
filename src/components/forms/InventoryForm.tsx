@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,9 +12,10 @@ interface InventoryFormProps {
   type: 'raw' | 'finished';
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  initialData?: any;
 }
 
-const InventoryForm: React.FC<InventoryFormProps> = ({ type, onSubmit, onCancel }) => {
+const InventoryForm: React.FC<InventoryFormProps> = ({ type, onSubmit, onCancel, initialData }) => {
   const [formData, setFormData] = useState({
     name: '',
     stock: '',
@@ -25,6 +26,22 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ type, onSubmit, onCancel 
     location: '',
     notes: '',
   });
+
+  // Load initial data if editing an existing item
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        stock: initialData.stock?.toString() || '',
+        unit: initialData.unit || (type === 'raw' ? 'kg' : 'pcs'),
+        minStock: initialData.minStock?.toString() || '',
+        maxStock: initialData.maxStock?.toString() || '',
+        reorderLevel: initialData.reorderLevel?.toString() || '',
+        location: initialData.location || '',
+        notes: initialData.notes || '',
+      });
+    }
+  }, [initialData, type]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -45,18 +62,18 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ type, onSubmit, onCancel 
     }
     
     const newItem = {
-      id: type === 'raw' ? `RM-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}` : 
-                          `FG-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+      id: initialData?.id || (type === 'raw' ? `RM-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}` : 
+                          `FG-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`),
       ...formData,
       stock: parseInt(formData.stock),
       minStock: type === 'raw' ? parseInt(formData.minStock) : undefined,
       maxStock: type === 'raw' ? parseInt(formData.maxStock) : undefined,
       reorderLevel: parseInt(formData.reorderLevel),
-      status: 'normal',
+      status: initialData?.status || 'normal',
     };
     
     onSubmit(newItem);
-    toast.success(`New ${type === 'raw' ? 'raw material' : 'finished good'} added successfully`);
+    toast.success(`${initialData ? 'Updated' : 'Added new'} ${type === 'raw' ? 'raw material' : 'finished good'} successfully`);
   };
 
   return (
@@ -78,7 +95,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ type, onSubmit, onCancel 
         
         <div className="space-y-2">
           <Label htmlFor="stock">
-            Initial Stock <span className="text-red-500">*</span>
+            {initialData ? 'Current Stock' : 'Initial Stock'} <span className="text-red-500">*</span>
             <TooltipGuidance content="Enter the quantity currently in stock" />
           </Label>
           <Input
@@ -210,7 +227,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ type, onSubmit, onCancel 
           Cancel
         </Button>
         <Button type="submit">
-          Add Item
+          {initialData ? 'Update Item' : 'Add Item'}
         </Button>
       </div>
     </form>
