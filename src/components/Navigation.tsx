@@ -18,8 +18,10 @@ import {
   CreditCard,
   BarChart4,
   Package,
-  Building
+  Building,
+  HelpCircle
 } from 'lucide-react';
+import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
 
 const navigationItems = [
   {
@@ -140,6 +142,15 @@ const Navigation: React.FC = () => {
                       <div className="font-medium">{item.name}</div>
                       <div className="text-xs text-muted-foreground">{item.description}</div>
                     </div>
+                  )}
+                  
+                  {!isCollapsed && (
+                    <TooltipGuidance
+                      content={item.description}
+                      side="right"
+                    >
+                      <HelpCircle className="h-3 w-3 text-muted-foreground ml-auto" />
+                    </TooltipGuidance>
                   )}
                 </Link>
               </li>

@@ -3,6 +3,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import Header from './Header';
 import Navigation from './Navigation';
+import UserManual from './UserManual';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
           {children}
         </div>
       </main>
+      <UserManual />
     </div>
   );
 };

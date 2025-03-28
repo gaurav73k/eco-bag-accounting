@@ -8,7 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { DialogForm } from '@/components/ui/dialog-form';
+import StockForm from '@/components/forms/StockForm';
+import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
 import { cn } from '@/lib/utils';
 import { PlusCircle, Download, AlertTriangle, Search, Package, FileText } from 'lucide-react';
 import { 
@@ -19,9 +21,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Mock data for raw materials
-const rawMaterials = [
+const initialRawMaterials = [
   { id: '1', name: 'Non-woven PP Fabric (White)', stock: 250, unit: 'Rolls', reorderLevel: 100, status: 'medium' },
   { id: '2', name: 'Non-woven PP Fabric (Green)', stock: 50, unit: 'Rolls', reorderLevel: 100, status: 'low' },
   { id: '3', name: 'Thread Spools', stock: 180, unit: 'Spools', reorderLevel: 50, status: 'good' },
@@ -31,7 +34,7 @@ const rawMaterials = [
 ];
 
 // Mock data for finished goods
-const finishedGoods = [
+const initialFinishedGoods = [
   { id: '1', name: 'W-Cut Bags (White)', stock: 3500, unit: 'Pieces', reorderLevel: 1000, status: 'good' },
   { id: '2', name: 'W-Cut Bags (Green)', stock: 1200, unit: 'Pieces', reorderLevel: 1000, status: 'medium' },
   { id: '3', name: 'U-Cut Bags (White)', stock: 500, unit: 'Pieces', reorderLevel: 1000, status: 'low' },
@@ -43,12 +46,26 @@ const finishedGoods = [
 const StockManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTab, setCurrentTab] = useState('rawMaterials');
-  const { toast } = useToast();
+  const [rawMaterials, setRawMaterials] = useState(initialRawMaterials);
+  const [finishedGoods, setFinishedGoods] = useState(initialFinishedGoods);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { toast: hookToast } = useToast();
 
   // Get current data based on the active tab
   const currentData = currentTab === 'rawMaterials' ?
     rawMaterials.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase())) :
     finishedGoods.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  const handleAddStock = (newItem: any) => {
+    if (currentTab === 'rawMaterials') {
+      setRawMaterials(prev => [...prev, newItem]);
+    } else {
+      setFinishedGoods(prev => [...prev, newItem]);
+    }
+    
+    setIsAddDialogOpen(false);
+    toast.success(`Added new ${currentTab === 'rawMaterials' ? 'raw material' : 'finished good'} to inventory`);
+  };
 
   const handleExport = (format: string) => {
     try {
@@ -63,13 +80,13 @@ const StockManagement: React.FC = () => {
         `${currentTab}-stock-${getFormattedDate()}`
       );
       
-      toast({
+      hookToast({
         title: "Export Successful",
         description: `Stock data exported as ${format.toUpperCase()} file.`,
       });
     } catch (error) {
       console.error("Export error:", error);
-      toast({
+      hookToast({
         title: "Export Failed",
         description: "There was an error exporting the stock data.",
         variant: "destructive"
@@ -98,9 +115,13 @@ const StockManagement: React.FC = () => {
           description="Track raw materials and finished goods inventory"
         >
           <div className="flex gap-2">
-            <Button size="sm">
+            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
               <PlusCircle className="h-4 w-4 mr-2" />
               Add Stock
+              <TooltipGuidance 
+                content="Add new raw materials or finished goods to your inventory"
+                side="bottom"
+              />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -226,6 +247,19 @@ const StockManagement: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      <DialogForm 
+        title={`Add New ${currentTab === 'rawMaterials' ? 'Raw Material' : 'Finished Good'}`}
+        description="Add a new item to your inventory"
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+      >
+        <StockForm 
+          type={currentTab as 'rawMaterials' | 'finishedGoods'} 
+          onSubmit={handleAddStock}
+          onCancel={() => setIsAddDialogOpen(false)}
+        />
+      </DialogForm>
     </Layout>
   );
 };
