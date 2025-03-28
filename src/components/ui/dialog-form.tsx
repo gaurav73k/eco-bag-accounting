@@ -17,7 +17,8 @@ interface DialogFormProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-const DialogForm: React.FC<DialogFormProps> = ({
+// Export as named export
+export const DialogForm: React.FC<DialogFormProps> = ({
   title,
   description,
   isOpen,
@@ -47,4 +48,5 @@ const DialogForm: React.FC<DialogFormProps> = ({
   );
 };
 
+// Also maintain the default export for backward compatibility
 export default DialogForm;

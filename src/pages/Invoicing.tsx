@@ -21,7 +21,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import DialogForm from '@/components/ui/dialog-form';
+import { DialogForm } from '@/components/ui/dialog-form';
 import InvoiceForm from '@/components/forms/InvoiceForm';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
