@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
@@ -27,7 +26,6 @@ import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
-// Mock data for invoices - expanded with more realistic data
 const invoicesData = [
   { id: 'INV-001', date: '2023-06-15', customer: 'Kathmandu Retail Store', customerInfo: { id: '1', name: 'Kathmandu Retail Store', address: 'Thamel, Kathmandu', phone: '01-4567890', email: 'info@kathmanduretail.com' }, items: [{id: '1', name: 'W-Cut Bags (Small)', quantity: 500, price: 40, total: 20000}], subtotal: 20000, vat: 2600, amount: 22600, status: 'paid', paymentMethod: 'Cash', paymentDate: '2023-06-15', accountingStatus: 'posted' },
   { id: 'INV-002', date: '2023-06-14', customer: 'Pokhara Gift Shop', customerInfo: { id: '2', name: 'Pokhara Gift Shop', address: 'Lakeside, Pokhara', phone: '061-456789', email: 'pokharagift@example.com' }, items: [{id: '2', name: 'W-Cut Bags (Medium)', quantity: 700, price: 50, total: 35000}], subtotal: 35000, vat: 4550, amount: 39550, status: 'paid', paymentMethod: 'Bank Transfer', paymentDate: '2023-06-14', accountingStatus: 'posted' },
@@ -48,7 +46,6 @@ const Invoicing: React.FC = () => {
   const [isProcessPaymentOpen, setIsProcessPaymentOpen] = useState(false);
   const { toast: toastNotification } = useToast();
 
-  // Filter invoices based on search term and current tab
   const filteredInvoices = invoicesData.filter(invoice => {
     const matchesSearch = 
       invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -63,16 +60,12 @@ const Invoicing: React.FC = () => {
     console.log('Invoice created:', data);
     setIsCreateInvoiceOpen(false);
     
-    // Add automatic journal entry
-    toast({
-      title: "Invoice Created",
+    toast.success("Invoice Created", {
       description: `Invoice ${data.invoiceNumber} has been created and recorded in the accounting system.`,
     });
     
-    // Redirect to daybook to see the entry (this would be automatic in a real system)
     setTimeout(() => {
-      toast({
-        title: "Accounting Entry Created",
+      toast.success("Accounting Entry Created", {
         description: "Journal entry was automatically created in the daybook.",
       });
     }, 1000);
@@ -113,23 +106,19 @@ const Invoicing: React.FC = () => {
     console.log('Payment processed:', data);
     setIsProcessPaymentOpen(false);
     
-    toast({
-      title: "Payment Processed",
+    toast.success("Payment Processed", {
       description: `Payment for invoice ${selectedInvoice.id} has been processed and recorded.`,
     });
     
-    // Automatically create journal entry
     setTimeout(() => {
-      toast({
-        title: "Accounting Entry Created",
+      toast.success("Accounting Entry Created", {
         description: "Payment journal entry was automatically created in the daybook.",
       });
     }, 1000);
   };
 
   const recordInDaybook = (invoice: any) => {
-    toast({
-      title: "Journal Entry Created",
+    toast.success("Journal Entry Created", {
       description: `Invoice ${invoice.id} has been recorded in the daybook.`,
     });
   };

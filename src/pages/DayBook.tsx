@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
@@ -223,8 +222,7 @@ const DayBook: React.FC = () => {
   });
 
   const handleCreateEntry = (data: any) => {
-    toast({
-      title: "Journal Entry Created",
+    toast.success("Journal Entry Created", {
       description: `Entry ${data.id} has been posted to the general ledger.`,
     });
     setIsNewEntryOpen(false);

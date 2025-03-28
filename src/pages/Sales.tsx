@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -34,7 +33,6 @@ import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
 import { DialogForm } from '@/components/ui/dialog-form';
 
-// Expanded mock data for sales (same as invoices)
 const salesData = [
   { id: 'INV-001', date: '2023-06-15', customer: 'Kathmandu Retail Store', customerInfo: { id: '1', name: 'Kathmandu Retail Store', address: 'Thamel, Kathmandu', phone: '01-4567890', email: 'info@kathmanduretail.com' }, items: [{id: '1', name: 'W-Cut Bags (Small)', quantity: 500, price: 40, total: 20000}], subtotal: 20000, vat: 2600, amount: 22600, status: 'paid', paymentMethod: 'Cash', paymentDate: '2023-06-15', accountingStatus: 'posted' },
   { id: 'INV-002', date: '2023-06-14', customer: 'Pokhara Gift Shop', customerInfo: { id: '2', name: 'Pokhara Gift Shop', address: 'Lakeside, Pokhara', phone: '061-456789', email: 'pokharagift@example.com' }, items: [{id: '2', name: 'W-Cut Bags (Medium)', quantity: 700, price: 50, total: 35000}], subtotal: 35000, vat: 4550, amount: 39550, status: 'paid', paymentMethod: 'Bank Transfer', paymentDate: '2023-06-14', accountingStatus: 'posted' },
@@ -46,10 +44,8 @@ const salesData = [
   { id: 'INV-008', date: '2023-06-03', customer: 'Dharan Retailer', customerInfo: { id: '8', name: 'Dharan Retailer', address: 'Putali Line, Dharan', phone: '025-123789', email: 'dharanretail@example.com' }, items: [{id: '3', name: 'W-Cut Bags (Large)', quantity: 350, price: 40, total: 14000}], subtotal: 14000, vat: 1820, amount: 15820, status: 'cancelled', paymentMethod: 'Cancelled', accountingStatus: 'cancelled' },
 ];
 
-// Payment pending invoices
 const pendingInvoices = salesData.filter(sale => sale.status === 'pending');
 
-// Top customers by sales volume
 const topCustomers = [
   { name: 'Pokhara Gift Shop', sales: 39550, purchases: 15 },
   { name: 'Kathmandu Retail Store', sales: 22600, purchases: 10 },
@@ -58,7 +54,6 @@ const topCustomers = [
   { name: 'Lalitpur Boutique', sales: 20340, purchases: 4 }
 ];
 
-// Monthly sales data for charts
 const monthlySalesData = [
   { month: 'Jan', sales: 150000 },
   { month: 'Feb', sales: 180000 },
@@ -68,7 +63,6 @@ const monthlySalesData = [
   { month: 'Jun', sales: 300000 }
 ];
 
-// Product performance data
 const productPerformance = [
   { product: 'W-Cut Bags (Small)', sales: 90000, units: 2250 },
   { product: 'W-Cut Bags (Medium)', sales: 120000, units: 2400 },
@@ -86,7 +80,6 @@ const Sales: React.FC = () => {
   const { toast: toastNotification } = useToast();
   const navigate = useNavigate();
 
-  // Filter sales based on search term and current tab
   const filteredSales = salesData.filter(sale => {
     const matchesSearch = 
       sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -130,15 +123,12 @@ const Sales: React.FC = () => {
     console.log('Quick sale processed:', data);
     setIsQuickSaleOpen(false);
     
-    toast({
-      title: "Sale Processed",
+    toast.success("Sale Processed", {
       description: "Quick sale has been processed and recorded in the system.",
     });
     
-    // Automatically create invoice and journal entry
     setTimeout(() => {
-      toast({
-        title: "Invoice Created",
+      toast.success("Invoice Created", {
         description: "Invoice has been automatically generated for this sale.",
       });
     }, 1000);
@@ -148,8 +138,7 @@ const Sales: React.FC = () => {
     console.log('Sales report generated:', data);
     setIsSalesReportOpen(false);
     
-    toast({
-      title: "Report Generated",
+    toast.success("Report Generated", {
       description: "Sales report has been generated successfully.",
     });
   };
