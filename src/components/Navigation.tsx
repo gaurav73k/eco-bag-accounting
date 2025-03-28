@@ -13,7 +13,12 @@ import {
   Users,
   Wallet,
   Settings,
-  FileText
+  FileText,
+  BookOpen,
+  CreditCard,
+  BarChart4,
+  Package,
+  Building
 } from 'lucide-react';
 
 const navigationItems = [
@@ -21,51 +26,67 @@ const navigationItems = [
     name: 'Dashboard',
     path: '/',
     icon: <LayoutDashboard className="h-5 w-5" />,
+    description: 'Overview of your business'
   },
   {
     name: 'Day Book',
     path: '/daybook',
-    icon: <CalendarDays className="h-5 w-5" />,
+    icon: <BookOpen className="h-5 w-5" />,
+    description: 'Journal entries and transactions'
   },
   {
     name: 'Sales',
     path: '/sales',
     icon: <Receipt className="h-5 w-5" />,
+    description: 'Manage sales and revenue'
   },
   {
     name: 'Invoicing',
     path: '/invoicing',
     icon: <FileText className="h-5 w-5" />,
+    description: 'Create and manage invoices'
   },
   {
     name: 'Purchases',
     path: '/purchases',
     icon: <ShoppingCart className="h-5 w-5" />,
+    description: 'Track and manage purchases'
   },
   {
     name: 'Inventory',
     path: '/inventory',
-    icon: <ClipboardList className="h-5 w-5" />,
+    icon: <Package className="h-5 w-5" />,
+    description: 'Manage stock and products'
   },
   {
     name: 'Ledger',
     path: '/ledger',
     icon: <Home className="h-5 w-5" />,
+    description: 'General ledger and accounts'
   },
   {
     name: 'Payroll',
     path: '/payroll',
     icon: <Users className="h-5 w-5" />,
+    description: 'Manage employee payroll'
   },
   {
     name: 'Expenses',
     path: '/expenses',
     icon: <Wallet className="h-5 w-5" />,
+    description: 'Track business expenses'
+  },
+  {
+    name: 'Stock',
+    path: '/stock',
+    icon: <ClipboardList className="h-5 w-5" />,
+    description: 'Raw materials and finished goods'
   },
   {
     name: 'Settings',
     path: '/settings',
     icon: <Settings className="h-5 w-5" />,
+    description: 'Configure your account'
   },
 ];
 
@@ -100,7 +121,7 @@ const Navigation: React.FC = () => {
                 <Link
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-300",
+                    "flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-300 group relative",
                     location.pathname === item.path 
                       ? "bg-primary text-primary-foreground" 
                       : "hover:bg-secondary"
@@ -111,6 +132,14 @@ const Navigation: React.FC = () => {
                     <span className="whitespace-nowrap overflow-hidden transition-all duration-300">
                       {item.name}
                     </span>
+                  )}
+                  
+                  {/* Tooltip for collapsed state */}
+                  {isCollapsed && (
+                    <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="font-medium">{item.name}</div>
+                      <div className="text-xs text-muted-foreground">{item.description}</div>
+                    </div>
                   )}
                 </Link>
               </li>
