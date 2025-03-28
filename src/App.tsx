@@ -17,6 +17,8 @@ import Payroll from "./pages/Payroll";
 import Expenses from "./pages/Expenses";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import Invoicing from "./pages/Invoicing";
+import AccountSettings from "./pages/AccountSettings";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,7 @@ const AppRoutes = () => {
       <Route path="/daybook" element={<ProtectedRoute><DayBook /></ProtectedRoute>} />
       <Route path="/stock" element={<ProtectedRoute><StockManagement /></ProtectedRoute>} />
       <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
+      <Route path="/invoicing" element={<ProtectedRoute><Invoicing /></ProtectedRoute>} />
       <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
       <Route path="/inventory/product/:productId" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
@@ -49,6 +52,7 @@ const AppRoutes = () => {
       <Route path="/payroll" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
       <Route path="/payroll/employee/:employeeId" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
       <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

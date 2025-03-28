@@ -11,7 +11,9 @@ import {
   Receipt, 
   ShoppingCart, 
   Users,
-  Wallet
+  Wallet,
+  Settings,
+  FileText
 } from 'lucide-react';
 
 const navigationItems = [
@@ -29,6 +31,11 @@ const navigationItems = [
     name: 'Sales',
     path: '/sales',
     icon: <Receipt className="h-5 w-5" />,
+  },
+  {
+    name: 'Invoicing',
+    path: '/invoicing',
+    icon: <FileText className="h-5 w-5" />,
   },
   {
     name: 'Purchases',
@@ -54,6 +61,11 @@ const navigationItems = [
     name: 'Expenses',
     path: '/expenses',
     icon: <Wallet className="h-5 w-5" />,
+  },
+  {
+    name: 'Settings',
+    path: '/settings',
+    icon: <Settings className="h-5 w-5" />,
   },
 ];
 
