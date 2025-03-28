@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -110,6 +111,7 @@ const LedgerEntryForm: React.FC<LedgerEntryFormProps> = ({ onSubmit, onCancel })
     };
     
     onSubmit(ledgerEntry);
+    toast.success("Ledger entry created successfully");
   };
 
   return (

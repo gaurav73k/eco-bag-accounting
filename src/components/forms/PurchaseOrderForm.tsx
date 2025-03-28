@@ -128,6 +128,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({ onSubmit, onCance
     };
     
     onSubmit(purchaseOrder);
+    toast.success("Purchase order created successfully");
   };
 
   return (

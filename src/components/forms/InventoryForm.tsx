@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
+import { toast } from 'sonner';
 
 interface InventoryFormProps {
   type: 'raw' | 'finished';
@@ -37,6 +38,12 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ type, onSubmit, onCancel 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate the form
+    if (!formData.name || !formData.stock) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    
     const newItem = {
       id: type === 'raw' ? `RM-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}` : 
                           `FG-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
@@ -49,6 +56,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({ type, onSubmit, onCancel 
     };
     
     onSubmit(newItem);
+    toast.success(`New ${type === 'raw' ? 'raw material' : 'finished good'} added successfully`);
   };
 
   return (
