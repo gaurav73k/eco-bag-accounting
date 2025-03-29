@@ -24,6 +24,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
+import { EntryDialog } from '@/components/ui/entry-dialog';
+import PurchaseOrderForm from '@/components/forms/PurchaseOrderForm';
+import { toast } from 'sonner';
 
 // Mock data for purchases
 const purchasesData = [
@@ -44,10 +47,12 @@ const unpaidOrders = purchasesData.filter(purchase => purchase.paymentStatus !==
 const Purchases: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTab, setCurrentTab] = useState('all');
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [purchases, setPurchases] = useState(purchasesData);
 
   // Filter purchases based on search term and current tab
-  const filteredPurchases = purchasesData.filter(purchase => {
+  const filteredPurchases = purchases.filter(purchase => {
     const matchesSearch = 
       purchase.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       purchase.supplier.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,18 +80,43 @@ const Purchases: React.FC = () => {
         `purchases-data-${getFormattedDate()}`
       );
       
-      toast({
+      uiToast({
         title: "Export Successful",
         description: `Purchases data exported as ${format.toUpperCase()} file.`,
       });
     } catch (error) {
       console.error("Export error:", error);
-      toast({
+      uiToast({
         title: "Export Failed",
         description: "There was an error exporting the purchases data.",
         variant: "destructive"
       });
     }
+  };
+
+  const handleCreatePurchaseOrder = (data: any) => {
+    // Generate a new unique ID
+    const newId = `PO-${Math.floor(Math.random() * 10000).toString().padStart(5, '0')}`;
+    
+    // Create the new purchase order
+    const newPurchaseOrder = {
+      id: newId,
+      date: new Date().toISOString().split('T')[0],
+      supplier: data.vendor,
+      items: data.items.map((item: any) => `${item.itemId} - ${item.quantity}`).join(', '),
+      amount: data.items.reduce((total: number, item: any) => total + item.total, 0),
+      status: 'pending',
+      paymentStatus: 'unpaid'
+    };
+    
+    // Add the new purchase order to the list
+    setPurchases(prev => [newPurchaseOrder, ...prev]);
+    
+    // Close the modal
+    setIsCreateModalOpen(false);
+    
+    // Show success message
+    toast.success('Purchase order created successfully');
   };
 
   return (
@@ -98,7 +128,7 @@ const Purchases: React.FC = () => {
           icon={<ShoppingCart className="h-6 w-6" />}
         >
           <div className="flex gap-2">
-            <Button size="sm">
+            <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
               <PlusCircle className="h-4 w-4 mr-2" />
               New Purchase Order
             </Button>
@@ -119,6 +149,22 @@ const Purchases: React.FC = () => {
           </div>
         </PageTitle>
         
+        {/* Create Purchase Order Modal */}
+        <EntryDialog
+          title="Create Purchase Order"
+          description="Fill in the details to create a new purchase order"
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          entityType="purchase-order"
+          isCreate={true}
+          size="lg"
+        >
+          <PurchaseOrderForm
+            onSubmit={handleCreatePurchaseOrder}
+            onCancel={() => setIsCreateModalOpen(false)}
+          />
+        </EntryDialog>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card>
             <CardHeader className="pb-2">
@@ -127,10 +173,10 @@ const Purchases: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                Rs. {purchasesData.reduce((sum, purchase) => sum + purchase.amount, 0).toLocaleString()}
+                Rs. {purchases.reduce((sum, purchase) => sum + purchase.amount, 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                From {purchasesData.length} purchase orders
+                From {purchases.length} purchase orders
               </p>
             </CardContent>
           </Card>

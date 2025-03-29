@@ -25,7 +25,7 @@ import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
 import HistoryTracker from '@/components/HistoryTracker';
 
 const Header: React.FC = () => {
-  const { isMobile } = useIsMobile();
+  const isMobile = useIsMobile();
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
