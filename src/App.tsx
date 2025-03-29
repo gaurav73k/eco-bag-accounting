@@ -21,7 +21,14 @@ import Invoicing from "./pages/Invoicing";
 import AccountSettings from "./pages/AccountSettings";
 import RoleManagement from "./components/RoleManagement";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -57,17 +64,27 @@ const AppRoutes = () => {
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/daybook" element={<ProtectedRoute><DayBook /></ProtectedRoute>} />
       <Route path="/stock" element={<ProtectedRoute><StockManagement /></ProtectedRoute>} />
+      <Route path="/stock/new" element={<ProtectedRoute><StockManagement /></ProtectedRoute>} />
+      <Route path="/stock/edit/:id" element={<ProtectedRoute><StockManagement /></ProtectedRoute>} />
       <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
       <Route path="/invoicing" element={<ProtectedRoute><Invoicing /></ProtectedRoute>} />
+      <Route path="/invoicing/new" element={<ProtectedRoute><Invoicing /></ProtectedRoute>} />
       <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
+      <Route path="/purchases/new" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
+      <Route path="/purchases/edit/:id" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+      <Route path="/inventory/new" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
       <Route path="/inventory/product/:productId" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
       <Route path="/ledger" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
+      <Route path="/ledger/new" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
       <Route path="/ledger/:entityType/:entityId" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
       <Route path="/ledger/:entityType/new-transaction/:entityId" element={<ProtectedRoute><Ledger /></ProtectedRoute>} />
       <Route path="/payroll" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
+      <Route path="/payroll/new" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
       <Route path="/payroll/employee/:employeeId" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
       <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+      <Route path="/expenses/new" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+      <Route path="/expenses/edit/:id" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
       <Route path="/user-management" element={
         <AdminRoute requiredPermission="manage_users">

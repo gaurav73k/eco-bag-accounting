@@ -29,6 +29,7 @@ interface EntryDialogProps {
   isEdit?: boolean;
   disabled?: boolean;
   saveLabel?: string;
+  hideFooter?: boolean;
 }
 
 // Export as named export
@@ -47,6 +48,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
   isEdit = false,
   disabled = false,
   saveLabel = 'Save',
+  hideFooter = false,
 }) => {
   const sizeClasses = {
     sm: 'sm:max-w-md',
@@ -92,7 +94,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
   const canSave = (isCreate && canCreate) || (isEdit && canEdit) || (!isCreate && !isEdit);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className={`${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader className="flex flex-row items-center justify-between">
           <div>
@@ -108,7 +110,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
           {children}
         </div>
         
-        {onSave && (
+        {onSave && !hideFooter && (
           <DialogFooter>
             <Button variant="outline" onClick={onClose}>
               Cancel

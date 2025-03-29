@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,7 +15,9 @@ import {
   Search, 
   Filter,
   FileText,
-  PieChart
+  PieChart,
+  Edit,
+  Trash
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -25,8 +27,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
+import { EntryDialog } from '@/components/ui/entry-dialog';
+import ExpenseForm from '@/components/forms/ExpenseForm';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Mock data for expenses
 const expensesData = [
   { id: 'EXP-001', date: '2023-06-15', description: 'Purchase of Raw Materials', category: 'Raw Materials', amount: 25000, paymentMethod: 'Bank Transfer' },
   { id: 'EXP-002', date: '2023-06-14', description: 'Electricity Bill', category: 'Utilities', amount: 5000, paymentMethod: 'Cash' },
@@ -38,10 +42,8 @@ const expensesData = [
   { id: 'EXP-008', date: '2023-06-08', description: 'Rent', category: 'Rent', amount: 15000, paymentMethod: 'Bank Transfer' },
 ];
 
-// Get unique categories for creating analytics
 const categories = [...new Set(expensesData.map(expense => expense.category))];
 
-// Calculate expense by category for pie chart
 const expensesByCategory = categories.map(category => {
   const total = expensesData
     .filter(expense => expense.category === category)
@@ -52,10 +54,19 @@ const expensesByCategory = categories.map(category => {
 const Expenses: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTab, setCurrentTab] = useState('all');
+  const [expenses, setExpenses] = useState(expensesData);
+  const [isNewExpenseDialogOpen, setIsNewExpenseDialogOpen] = useState(false);
+  const [isEditExpenseDialogOpen, setIsEditExpenseDialogOpen] = useState(false);
+  const [currentExpense, setCurrentExpense] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const params = useParams();
+  const { hasPermission } = useAuth();
 
-  // Filter expenses based on search term and current tab
-  const filteredExpenses = expensesData.filter(expense => {
+  const canEdit = hasPermission('edit_entry');
+  const canDelete = hasPermission('delete_entry');
+
+  const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = 
       expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       expense.category.toLowerCase().includes(searchTerm.toLowerCase());
@@ -66,6 +77,57 @@ const Expenses: React.FC = () => {
     if (currentTab === 'salaries') return matchesSearch && expense.category === 'Salaries';
     return matchesSearch;
   });
+
+  const handleNewExpense = () => {
+    setCurrentExpense(null);
+    setIsNewExpenseDialogOpen(true);
+  };
+
+  const handleEditExpense = (expense: any) => {
+    setCurrentExpense(expense);
+    setIsEditExpenseDialogOpen(true);
+  };
+
+  const handleDeleteExpense = (expenseId: string) => {
+    const expenseName = expenses.find(e => e.id === expenseId)?.description;
+    if (window.confirm(`Are you sure you want to delete expense: ${expenseName}?`)) {
+      setExpenses(prevExpenses => prevExpenses.filter(e => e.id !== expenseId));
+      toast({
+        title: "Expense Deleted",
+        description: `${expenseName} has been removed.`,
+      });
+    }
+  };
+
+  const handleSaveExpense = (data: any) => {
+    if (currentExpense) {
+      setExpenses(prevExpenses => 
+        prevExpenses.map(expense => 
+          expense.id === currentExpense.id 
+            ? { ...expense, ...data }
+            : expense
+        )
+      );
+      setIsEditExpenseDialogOpen(false);
+      toast({
+        title: "Expense Updated",
+        description: `${data.description} has been updated.`,
+      });
+    } else {
+      const newExpense = {
+        id: `EXP-${String(expenses.length + 1).padStart(3, '0')}`,
+        ...data,
+        date: data.date || new Date().toISOString().split('T')[0],
+      };
+      
+      setExpenses(prevExpenses => [newExpense, ...prevExpenses]);
+      setIsNewExpenseDialogOpen(false);
+      toast({
+        title: "Expense Added",
+        description: `${data.description} has been added.`,
+      });
+    }
+  };
 
   const handleExport = (format: string) => {
     try {
@@ -104,7 +166,7 @@ const Expenses: React.FC = () => {
           icon={<Wallet className="h-6 w-6" />}
         >
           <div className="flex gap-2">
-            <Button size="sm">
+            <Button size="sm" onClick={handleNewExpense}>
               <PlusCircle className="h-4 w-4 mr-2" />
               New Expense
             </Button>
@@ -125,6 +187,48 @@ const Expenses: React.FC = () => {
           </div>
         </PageTitle>
         
+        <EntryDialog
+          title="Add New Expense"
+          description="Enter expense details"
+          isOpen={isNewExpenseDialogOpen}
+          onClose={() => setIsNewExpenseDialogOpen(false)}
+          entityType="expense"
+          entityName="expense entry"
+          isCreate={true}
+          hideFooter={true}
+          size="lg"
+        >
+          <ExpenseForm
+            onSave={handleSaveExpense}
+            onCancel={() => setIsNewExpenseDialogOpen(false)}
+          />
+        </EntryDialog>
+
+        <EntryDialog
+          title="Edit Expense"
+          description="Update expense details"
+          isOpen={isEditExpenseDialogOpen}
+          onClose={() => setIsEditExpenseDialogOpen(false)}
+          entityType="expense"
+          entityId={currentExpense?.id}
+          entityName={currentExpense?.description}
+          isEdit={true}
+          hideFooter={true}
+          size="lg"
+        >
+          <ExpenseForm
+            initialData={currentExpense ? {
+              description: currentExpense.description,
+              amount: String(currentExpense.amount),
+              category: currentExpense.category,
+              date: currentExpense.date,
+              paymentMethod: currentExpense.paymentMethod,
+            } : {}}
+            onSave={handleSaveExpense}
+            onCancel={() => setIsEditExpenseDialogOpen(false)}
+          />
+        </EntryDialog>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card>
             <CardHeader className="pb-2">
@@ -133,10 +237,10 @@ const Expenses: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                Rs. {expensesData.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
+                Rs. {expenses.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                From {expensesData.length} expenses
+                From {expenses.length} expenses
               </p>
             </CardContent>
           </Card>
@@ -148,10 +252,10 @@ const Expenses: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                Rs. {Math.max(...expensesData.map(expense => expense.amount)).toLocaleString()}
+                Rs. {Math.max(...expenses.map(expense => expense.amount)).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {expensesData.find(expense => expense.amount === Math.max(...expensesData.map(expense => expense.amount)))?.category}
+                {expenses.find(expense => expense.amount === Math.max(...expenses.map(expense => expense.amount)))?.category}
               </p>
             </CardContent>
           </Card>
@@ -198,7 +302,7 @@ const Expenses: React.FC = () => {
                         <span>{item.category}</span>
                       </div>
                       <div className="font-medium">
-                        Rs. {item.amount.toLocaleString()} ({Math.round(item.amount / expensesData.reduce((sum, expense) => sum + expense.amount, 0) * 100)}%)
+                        Rs. {item.amount.toLocaleString()} ({Math.round(item.amount / expenses.reduce((sum, expense) => sum + expense.amount, 0) * 100)}%)
                       </div>
                     </div>
                   ))}
@@ -258,6 +362,7 @@ const Expenses: React.FC = () => {
                         <TableHead>Category</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Payment Method</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -282,11 +387,33 @@ const Expenses: React.FC = () => {
                           </TableCell>
                           <TableCell className="text-right font-medium">Rs. {expense.amount.toLocaleString()}</TableCell>
                           <TableCell>{expense.paymentMethod}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end space-x-2">
+                              {canEdit && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditExpense(expense)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteExpense(expense.id)}
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                       {filteredExpenses.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8">
+                          <TableCell colSpan={7} className="text-center py-8">
                             No expenses found. Try adjusting your search.
                           </TableCell>
                         </TableRow>

@@ -1,250 +1,241 @@
 
 import React, { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 
+const formSchema = z.object({
+  description: z.string().min(2, {
+    message: 'Description must be at least 2 characters.',
+  }),
+  amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: 'Amount must be a positive number.',
+  }),
+  category: z.string().min(1, {
+    message: 'Please select a category.',
+  }),
+  date: z.string().min(1, {
+    message: 'Please select a date.',
+  }),
+  paymentMethod: z.string().min(1, {
+    message: 'Please select a payment method.',
+  }),
+});
+
+type ExpenseFormValues = z.infer<typeof formSchema>;
+
 interface ExpenseFormProps {
-  onSubmit: (data: any) => void;
+  onSave: (data: ExpenseFormValues) => void;
   onCancel: () => void;
+  initialData?: Partial<ExpenseFormValues>;
 }
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
-    expenseId: `EXP-${Math.floor(Math.random() * 10000).toString().padStart(5, '0')}`,
-    category: '',
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    description: '',
-    paymentMethod: '',
-    vendor: '',
-    receipt: '',
-    status: 'pending',
-    notes: '',
+const categories = [
+  'Raw Materials',
+  'Utilities',
+  'Salaries',
+  'Office',
+  'Maintenance',
+  'Rent',
+  'Transport',
+  'Other',
+];
+
+const paymentMethods = ['Cash', 'Bank Transfer', 'Credit Card', 'UPI', 'Cheque'];
+
+const ExpenseForm: React.FC<ExpenseFormProps> = ({
+  onSave,
+  onCancel,
+  initialData = {},
+}) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  const form = useForm<ExpenseFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      description: initialData.description || '',
+      amount: initialData.amount || '',
+      category: initialData.category || '',
+      date: initialData.date || today,
+      paymentMethod: initialData.paymentMethod || '',
+    },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Basic validation
-    if (!formData.category) {
-      toast.error("Please select an expense category");
-      return;
+  const onSubmit = async (data: ExpenseFormValues) => {
+    try {
+      setIsSubmitting(true);
+      // Convert amount to number
+      const formattedData = {
+        ...data,
+        amount: parseFloat(data.amount),
+      };
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      onSave(formattedData as any);
+      
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error('Failed to save expense');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      toast.error("Please enter a valid expense amount");
-      return;
-    }
-    
-    const expenseData = {
-      ...formData,
-      amount: parseFloat(formData.amount),
-      createdAt: new Date().toISOString(),
-    };
-    
-    onSubmit(expenseData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="expenseId">
-            Expense ID
-            <TooltipGuidance content="Unique identifier for this expense" />
-          </Label>
-          <Input
-            id="expenseId"
-            name="expenseId"
-            value={formData.expenseId}
-            onChange={handleChange}
-            disabled
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="category">
-            Category <span className="text-red-500">*</span>
-            <TooltipGuidance content="Type of expense" />
-          </Label>
-          <Select
-            value={formData.category}
-            onValueChange={(value) => handleSelectChange('category', value)}
-          >
-            <SelectTrigger id="category">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="utilities">Utilities</SelectItem>
-              <SelectItem value="rent">Rent</SelectItem>
-              <SelectItem value="maintenance">Maintenance</SelectItem>
-              <SelectItem value="office">Office Supplies</SelectItem>
-              <SelectItem value="travel">Travel</SelectItem>
-              <SelectItem value="meals">Meals & Entertainment</SelectItem>
-              <SelectItem value="advertising">Advertising</SelectItem>
-              <SelectItem value="insurance">Insurance</SelectItem>
-              <SelectItem value="salary">Salary</SelectItem>
-              <SelectItem value="transport">Transportation</SelectItem>
-              <SelectItem value="misc">Miscellaneous</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="amount">
-            Amount <span className="text-red-500">*</span>
-            <TooltipGuidance content="Cost of the expense" />
-          </Label>
-          <Input
-            id="amount"
-            name="amount"
-            type="number"
-            min="0"
-            step="0.01"
-            value={formData.amount}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="date">
-            Date <span className="text-red-500">*</span>
-            <TooltipGuidance content="When this expense occurred" />
-          </Label>
-          <Input
-            id="date"
-            name="date"
-            type="date"
-            value={formData.date}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="paymentMethod">
-            Payment Method
-            <TooltipGuidance content="How this expense was paid" />
-          </Label>
-          <Select
-            value={formData.paymentMethod}
-            onValueChange={(value) => handleSelectChange('paymentMethod', value)}
-          >
-            <SelectTrigger id="paymentMethod">
-              <SelectValue placeholder="Select payment method" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="cash">Cash</SelectItem>
-              <SelectItem value="credit">Credit Card</SelectItem>
-              <SelectItem value="debit">Debit Card</SelectItem>
-              <SelectItem value="bank">Bank Transfer</SelectItem>
-              <SelectItem value="upi">UPI</SelectItem>
-              <SelectItem value="cheque">Cheque</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="vendor">
-            Vendor/Payee
-            <TooltipGuidance content="Who received this payment" />
-          </Label>
-          <Input
-            id="vendor"
-            name="vendor"
-            value={formData.vendor}
-            onChange={handleChange}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="status">
-            Status
-            <TooltipGuidance content="Current status of this expense" />
-          </Label>
-          <Select
-            value={formData.status}
-            onValueChange={(value) => handleSelectChange('status', value)}
-          >
-            <SelectTrigger id="status">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="receipt">
-            Receipt Reference
-            <TooltipGuidance content="Reference number for the receipt" />
-          </Label>
-          <Input
-            id="receipt"
-            name="receipt"
-            value={formData.receipt}
-            onChange={handleChange}
-          />
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="description">
-          Description <span className="text-red-500">*</span>
-          <TooltipGuidance content="Brief description of this expense" />
-        </Label>
-        <Textarea
-          id="description"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
           name="description"
-          value={formData.description}
-          onChange={handleChange}
-          required
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Enter expense description"
+                  {...field}
+                  rows={2}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="notes">
-          Additional Notes
-          <TooltipGuidance content="Any other relevant details about this expense" />
-        </Label>
-        <Textarea
-          id="notes"
-          name="notes"
-          value={formData.notes}
-          onChange={handleChange}
-          rows={3}
+        
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Amount (₹)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-      
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">
-          Add Expense
-        </Button>
-      </div>
-    </form>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date</FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="paymentMethod"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Payment Method</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {paymentMethods.map((method) => (
+                    <SelectItem key={method} value={method}>
+                      {method}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Saving...' : 'Save Expense'}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 };
 
