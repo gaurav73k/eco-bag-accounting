@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
@@ -25,6 +24,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
+import EntryDialog from '@/components/ui/entry-dialog';
+import EmployeePayrollForm from '@/components/forms/EmployeePayrollForm';
 
 // Mock data for employees
 const employees = [
@@ -62,6 +63,10 @@ const Payroll: React.FC = () => {
   const [currentTab, setCurrentTab] = useState('payroll');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const { toast } = useToast();
+  
+  // Add state for employee dialog and process payroll dialog
+  const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false);
+  const [showProcessPayrollDialog, setShowProcessPayrollDialog] = useState(false);
 
   // Filter data based on search term, current tab, and selected department
   const filteredData = currentTab === 'employees' 
@@ -131,6 +136,28 @@ const Payroll: React.FC = () => {
     }
   };
 
+  // Handle adding a new employee
+  const handleAddEmployee = (employeeData: any) => {
+    // In a real app, this would send data to a server
+    console.log("Adding new employee:", employeeData);
+    toast({
+      title: "Employee Added",
+      description: `${employeeData.firstName} ${employeeData.lastName} has been added successfully.`,
+    });
+    setShowAddEmployeeDialog(false);
+  };
+
+  // Handle processing payroll
+  const handleProcessPayroll = (payrollData: any) => {
+    // In a real app, this would process the payroll data
+    console.log("Processing payroll:", payrollData);
+    toast({
+      title: "Payroll Processed",
+      description: `Payroll for ${payrollData.month} has been processed successfully.`,
+    });
+    setShowProcessPayrollDialog(false);
+  };
+
   // Calculate total payroll amount for the month
   const totalPayroll = payrollData.reduce((total, entry) => total + entry.netSalary, 0);
 
@@ -148,7 +175,13 @@ const Payroll: React.FC = () => {
           icon={<Users className="h-6 w-6" />}
         >
           <div className="flex gap-2">
-            <Button size="sm">
+            <Button 
+              size="sm"
+              onClick={() => currentTab === 'employees' 
+                ? setShowAddEmployeeDialog(true)
+                : setShowProcessPayrollDialog(true)
+              }
+            >
               <PlusCircle className="h-4 w-4 mr-2" />
               {currentTab === 'employees' ? 'Add Employee' : 'Process Payroll'}
             </Button>
@@ -355,6 +388,77 @@ const Payroll: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      <EntryDialog
+        title="Add New Employee"
+        description="Enter employee details to add to the system"
+        isOpen={showAddEmployeeDialog}
+        onClose={() => setShowAddEmployeeDialog(false)}
+        size="lg"
+        entityType="employee"
+        isCreate={true}
+        hideFooter={true}
+      >
+        <EmployeePayrollForm 
+          onSubmit={handleAddEmployee} 
+          onCancel={() => setShowAddEmployeeDialog(false)} 
+        />
+      </EntryDialog>
+
+      <EntryDialog
+        title="Process Payroll"
+        description="Generate payroll for the current period"
+        isOpen={showProcessPayrollDialog}
+        onClose={() => setShowProcessPayrollDialog(false)}
+        size="md"
+        entityType="payroll"
+        isCreate={true}
+        onSave={() => handleProcessPayroll({
+          month: "July 2023",
+          totalEmployees: employees.length,
+          totalAmount: totalPayroll
+        })}
+      >
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Payroll Period</label>
+            <Select defaultValue="july-2023">
+              <SelectTrigger>
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="july-2023">July 2023</SelectItem>
+                <SelectItem value="august-2023">August 2023</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Include Employees</label>
+            <Select defaultValue="all">
+              <SelectTrigger>
+                <SelectValue placeholder="Select employees" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Employees</SelectItem>
+                <SelectItem value="production">Production Department</SelectItem>
+                <SelectItem value="quality">Quality Department</SelectItem>
+                <SelectItem value="logistics">Logistics Department</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="rounded-md bg-muted/50 p-4">
+            <div className="text-sm font-medium mb-2">Summary</div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>Total Employees:</div>
+              <div className="font-medium">{employees.length}</div>
+              <div>Estimated Total:</div>
+              <div className="font-medium">Rs. {totalPayroll.toLocaleString()}</div>
+            </div>
+          </div>
+        </div>
+      </EntryDialog>
     </Layout>
   );
 };

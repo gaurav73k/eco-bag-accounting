@@ -28,7 +28,6 @@ const Header: React.FC = () => {
   const isMobile = useIsMobile();
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   // Mock notifications
   const notifications = [
