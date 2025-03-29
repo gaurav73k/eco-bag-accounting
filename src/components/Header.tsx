@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Logo from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   BellRing,
   ChevronDown,
@@ -25,7 +25,7 @@ import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
 import HistoryTracker from '@/components/HistoryTracker';
 
 const Header: React.FC = () => {
-  const { isMobile } = useMobile();
+  const { isMobile } = useIsMobile();
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -40,7 +40,7 @@ const Header: React.FC = () => {
   return (
     <header className="flex items-center justify-between bg-background/95 backdrop-blur border-b border-border px-4 py-3 sticky top-0 z-50">
       <div className="flex items-center">
-        <Logo size={isMobile ? 'small' : 'normal'} />
+        <Logo size={isMobile ? 'sm' : 'md'} />
       </div>
 
       <div className="flex items-center gap-1 sm:gap-3">

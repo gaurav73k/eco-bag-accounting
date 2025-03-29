@@ -5,109 +5,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { History, X } from 'lucide-react';
-
-interface HistoryEntry {
-  id: string;
-  action: 'create' | 'update' | 'delete';
-  entityType: string;
-  entityId: string;
-  entityName: string;
-  timestamp: Date;
-  user: string;
-  details?: string;
-}
-
-// Mock history data - in a real app this would come from a database
-const mockHistoryData: HistoryEntry[] = [
-  {
-    id: '1',
-    action: 'create',
-    entityType: 'inventory',
-    entityId: 'RM-001',
-    entityName: 'Non-woven PP Fabric (White)',
-    timestamp: new Date(2023, 9, 15, 9, 30),
-    user: 'Admin User',
-    details: 'Added initial stock of 250 kg'
-  },
-  {
-    id: '2',
-    action: 'update',
-    entityType: 'inventory',
-    entityId: 'RM-002',
-    entityName: 'Non-woven PP Fabric (Green)',
-    timestamp: new Date(2023, 9, 16, 11, 45),
-    user: 'John Smith',
-    details: 'Updated stock from 100 to 50 kg'
-  },
-  {
-    id: '3',
-    action: 'create',
-    entityType: 'purchase',
-    entityId: 'PO-2023-001',
-    entityName: 'Purchase Order - Supplier XYZ',
-    timestamp: new Date(2023, 9, 17, 14, 20),
-    user: 'Admin User',
-    details: 'Created purchase order for ₹15,000'
-  },
-  {
-    id: '4',
-    action: 'delete',
-    entityType: 'expense',
-    entityId: 'EXP-2023-005',
-    entityName: 'Office Supplies',
-    timestamp: new Date(2023, 9, 18, 16, 10),
-    user: 'Sarah Jones',
-    details: 'Removed duplicate expense entry'
-  },
-  {
-    id: '5',
-    action: 'create',
-    entityType: 'ledger',
-    entityId: 'LED-2023-042',
-    entityName: 'Payment Receipt - Customer ABC',
-    timestamp: new Date(2023, 9, 19, 10, 25),
-    user: 'John Smith',
-    details: 'Recorded payment of ₹25,000'
-  },
-  {
-    id: '6',
-    action: 'update',
-    entityType: 'employee',
-    entityId: 'EMP-012',
-    entityName: 'Michael Lee',
-    timestamp: new Date(2023, 9, 20, 11, 30),
-    user: 'Admin User',
-    details: 'Updated salary information'
-  },
-  {
-    id: '7',
-    action: 'create',
-    entityType: 'inventory',
-    entityId: 'FG-003',
-    entityName: 'W-Cut Bags (Large)',
-    timestamp: new Date(2023, 9, 21, 9, 15),
-    user: 'Sarah Jones',
-    details: 'Added 500 pcs to inventory'
-  },
-  {
-    id: '8',
-    action: 'update',
-    entityType: 'purchase',
-    entityId: 'PO-2023-002',
-    entityName: 'Purchase Order - Supplier ABC',
-    timestamp: new Date(2023, 9, 22, 14, 45),
-    user: 'John Smith',
-    details: 'Updated delivery date'
-  }
-];
+import { useHistory, HistoryEntry } from '@/hooks/use-history';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HistoryTracker: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [filterType, setFilterType] = useState<string | null>(null);
+  const { history } = useHistory();
+  const { hasPermission } = useAuth();
+
+  const canViewHistory = hasPermission('view_history');
 
   const filteredHistory = filterType 
-    ? mockHistoryData.filter(entry => entry.entityType === filterType)
-    : mockHistoryData;
+    ? history.filter(entry => entry.entityType === filterType)
+    : history;
 
   const sortedHistory = [...filteredHistory].sort((a, b) => 
     b.timestamp.getTime() - a.timestamp.getTime()
@@ -118,6 +29,7 @@ const HistoryTracker: React.FC = () => {
       case 'create': return 'bg-green-100 text-green-800';
       case 'update': return 'bg-blue-100 text-blue-800';
       case 'delete': return 'bg-red-100 text-red-800';
+      case 'restore': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -133,7 +45,11 @@ const HistoryTracker: React.FC = () => {
     }).format(date);
   };
 
-  const entityTypes = Array.from(new Set(mockHistoryData.map(entry => entry.entityType)));
+  const entityTypes = Array.from(new Set(history.map(entry => entry.entityType)));
+
+  if (!canViewHistory) {
+    return null;
+  }
 
   return (
     <>

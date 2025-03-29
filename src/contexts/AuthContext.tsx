@@ -3,11 +3,27 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-type User = {
+export type Permission = 
+  | 'create_entry' 
+  | 'edit_entry' 
+  | 'delete_entry' 
+  | 'restore_entry' 
+  | 'view_history'
+  | 'manage_users'
+  | 'manage_roles';
+
+export type UserRole = {
+  id: string;
+  name: string;
+  permissions: Permission[];
+};
+
+export type User = {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'accountant' | 'manager';
+  roleId: string;
+  role: UserRole;
 };
 
 type AuthContextType = {
@@ -15,6 +31,31 @@ type AuthContextType = {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  hasPermission: (permission: Permission) => boolean;
+};
+
+// Define roles with permissions
+const roles: Record<string, UserRole> = {
+  'admin': {
+    id: '1',
+    name: 'Super Admin',
+    permissions: ['create_entry', 'edit_entry', 'delete_entry', 'restore_entry', 'view_history', 'manage_users', 'manage_roles']
+  },
+  'accountant': {
+    id: '2',
+    name: 'Accountant',
+    permissions: ['create_entry', 'edit_entry', 'view_history']
+  },
+  'manager': {
+    id: '3',
+    name: 'Manager',
+    permissions: ['create_entry', 'edit_entry', 'view_history']
+  },
+  'viewer': {
+    id: '4',
+    name: 'Viewer',
+    permissions: ['view_history']
+  }
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,19 +78,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      // Ensure role object is properly attached
+      const userWithRole = {
+        ...parsedUser,
+        role: roles[parsedUser.roleId] || roles['viewer']
+      };
+      setUser(userWithRole);
     }
   }, []);
 
   const login = async (email: string, password: string) => {
     // Simple mock authentication - in a real app, this would call an API
     if (email && password) {
-      // Mock user data - in a real app, this would come from the backend
+      // Determine role based on email for demo purposes
+      let roleId = 'viewer';
+      if (email.includes('admin')) {
+        roleId = 'admin';
+      } else if (email.includes('accountant')) {
+        roleId = 'accountant';
+      } else if (email.includes('manager')) {
+        roleId = 'manager';
+      }
+      
+      // Mock user data with role information
       const mockUser: User = {
         id: '1',
-        name: 'Admin User',
+        name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
         email: email,
-        role: 'admin',
+        roleId: roleId,
+        role: roles[roleId]
       };
       
       setUser(mockUser);
@@ -68,8 +126,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate('/login');
   };
 
+  const hasPermission = (permission: Permission): boolean => {
+    if (!user) return false;
+    return user.role.permissions.includes(permission);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

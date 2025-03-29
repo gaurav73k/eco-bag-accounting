@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Invoicing from "./pages/Invoicing";
 import AccountSettings from "./pages/AccountSettings";
+import RoleManagement from "./components/RoleManagement";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Admin route component that requires specific permissions
+const AdminRoute = ({ children, requiredPermission }: { children: React.ReactNode, requiredPermission: string }) => {
+  const { isAuthenticated, hasPermission } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (!hasPermission(requiredPermission as any)) {
+    return <Navigate to="/" />;
   }
   
   return <>{children}</>;
@@ -53,6 +69,11 @@ const AppRoutes = () => {
       <Route path="/payroll/employee/:employeeId" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
       <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
+      <Route path="/user-management" element={
+        <AdminRoute requiredPermission="manage_users">
+          <RoleManagement />
+        </AdminRoute>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
