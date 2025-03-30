@@ -1,9 +1,25 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, BookOpen, FileText, Download, Upload, Filter } from 'lucide-react';
+import { 
+  PlusCircle, 
+  BookOpen, 
+  FileText, 
+  Download, 
+  Upload, 
+  Filter,
+  Receipt,
+  CreditCard,
+  Repeat,
+  ShoppingCart,
+  ShoppingBag,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  XCircle,
+  CornerUpLeft,
+  Trash2
+} from 'lucide-react';
 import EntryDialog from '@/components/ui/entry-dialog';
 import TallyEntryForm from '@/components/forms/TallyEntryForm';
 import { toast } from 'sonner';
@@ -43,7 +59,6 @@ const Ledger: React.FC = () => {
     to: new Date().toISOString().split('T')[0],
   });
   
-  // Show entry dialog with a specific entry type
   const handleShowEntryDialog = (entryType: string) => {
     setSelectedEntryType(entryType);
     setShowNewEntryDialog(true);
@@ -51,31 +66,44 @@ const Ledger: React.FC = () => {
   
   const handleAddNewEntry = (data: any) => {
     console.log('New ledger entry:', data);
-    // Add the new entry to the state
     setLedgerEntries(prev => [data, ...prev]);
     toast.success('Ledger entry added successfully');
     setShowNewEntryDialog(false);
   };
-  
-  // Filter entries based on current filters
+
+  const getEntryTypeIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'receipt': return <Receipt className="h-4 w-4" />;
+      case 'credit-card': return <CreditCard className="h-4 w-4" />;
+      case 'repeat': return <Repeat className="h-4 w-4" />;
+      case 'book-open': return <BookOpen className="h-4 w-4" />;
+      case 'shopping-cart': return <ShoppingCart className="h-4 w-4" />;
+      case 'shopping-bag': return <ShoppingBag className="h-4 w-4" />;
+      case 'arrow-down-circle': return <ArrowDownCircle className="h-4 w-4" />;
+      case 'arrow-up-circle': return <ArrowUpCircle className="h-4 w-4" />;
+      case 'x-circle': return <XCircle className="h-4 w-4" />;
+      case 'file-text': return <FileText className="h-4 w-4" />;
+      case 'corner-up-left': return <CornerUpLeft className="h-4 w-4" />;
+      case 'trash-2': return <Trash2 className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
+    }
+  };
+
   const filteredEntries = ledgerEntries.filter(entry => {
-    // Filter by entry type if not "all"
     if (filterType !== 'all' && entry.entryType !== filterType) {
       return false;
     }
     
-    // Filter by search query
     if (searchQuery && !entry.description.toLowerCase().includes(searchQuery.toLowerCase()) &&
         !entry.partyName?.toLowerCase().includes(searchQuery.toLowerCase()) &&
         !entry.transactionId.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
     
-    // Filter by date range if provided
     const entryDate = new Date(entry.date);
     const fromDate = new Date(dateRange.from);
     const toDate = new Date(dateRange.to);
-    toDate.setHours(23, 59, 59, 999); // Include the entire end day
+    toDate.setHours(23, 59, 59, 999);
     
     if (entryDate < fromDate || entryDate > toDate) {
       return false;
@@ -84,7 +112,6 @@ const Ledger: React.FC = () => {
     return true;
   });
 
-  // Helper function to format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -118,8 +145,7 @@ const Ledger: React.FC = () => {
         </PageTitle>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
-          {/* Quick Entry Cards */}
-          {['receipt', 'payment', 'contra', 'journal', 'sales', 'purchase'].map((type, index) => {
+          {['receipt', 'payment', 'contra', 'journal', 'sales', 'purchase', 'return', 'damage', 'wastage'].map((type) => {
             const entryType = entryTypes.find(e => e.id === type);
             if (!entryType) return null;
             
@@ -127,12 +153,7 @@ const Ledger: React.FC = () => {
               <Card key={type} className="cursor-pointer hover:border-primary transition-all" onClick={() => handleShowEntryDialog(type)}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
-                    {type === 'receipt' && <Tally1 className="h-4 w-4" />}
-                    {type === 'payment' && <Tally2 className="h-4 w-4" />}
-                    {type === 'contra' && <Tally3 className="h-4 w-4" />}
-                    {type === 'journal' && <Tally4 className="h-4 w-4" />}
-                    {type === 'sales' && <Tally5 className="h-4 w-4" />}
-                    {type === 'purchase' && <Tally1 className="h-4 w-4" />}
+                    {getEntryTypeIcon(entryType.icon)}
                     {entryType.name}
                   </CardTitle>
                 </CardHeader>
@@ -144,6 +165,9 @@ const Ledger: React.FC = () => {
                     {type === 'journal' && 'Record adjustments and non-cash entries'}
                     {type === 'sales' && 'Record sales transactions'}
                     {type === 'purchase' && 'Record purchase transactions'}
+                    {type === 'return' && 'Record sales or purchase return transactions'}
+                    {type === 'damage' && 'Record damaged or lost inventory'}
+                    {type === 'wastage' && 'Record wastage of inventory or materials'}
                   </p>
                 </CardContent>
               </Card>
@@ -151,14 +175,12 @@ const Ledger: React.FC = () => {
           })}
         </div>
 
-        {/* Ledger Entries List */}
         <div className="p-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-medium">Ledger Entries</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Filter Controls */}
               <div className="flex flex-col md:flex-row gap-4 mb-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                   <div>
@@ -172,7 +194,12 @@ const Ledger: React.FC = () => {
                       <SelectContent>
                         <SelectItem value="all">All Entries</SelectItem>
                         {entryTypes.map(type => (
-                          <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                          <SelectItem key={type.id} value={type.id}>
+                            <div className="flex items-center gap-2">
+                              {getEntryTypeIcon(type.icon)}
+                              {type.name}
+                            </div>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -220,7 +247,6 @@ const Ledger: React.FC = () => {
                 </div>
               </div>
               
-              {/* Entries Table */}
               {filteredEntries.length > 0 ? (
                 <div className="border rounded-md">
                   <Table>
@@ -236,10 +262,7 @@ const Ledger: React.FC = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredEntries.map((entry, index) => {
-                        // Calculate total amount from all entries
                         const amount = entry.entries.reduce((sum: number, e: any) => sum + (e.type === 'debit' ? e.amount : 0), 0);
-                        
-                        // Find the entry type name
                         const entryTypeName = entryTypes.find(t => t.id === entry.entryType)?.name || entry.entryType;
                         
                         return (
@@ -281,7 +304,6 @@ const Ledger: React.FC = () => {
           </Card>
         </div>
 
-        {/* Add New Ledger Entry Dialog */}
         <EntryDialog
           title={`Add ${entryTypes.find(e => e.id === selectedEntryType)?.name || 'Journal'} Entry`}
           description="Record a new transaction in the general ledger"

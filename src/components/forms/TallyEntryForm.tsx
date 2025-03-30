@@ -7,7 +7,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Tally1, Tally2, Tally3, Tally4, Tally5 } from 'lucide-react';
+import { 
+  Receipt, 
+  CreditCard, 
+  Repeat, 
+  BookOpen, 
+  ShoppingCart, 
+  ShoppingBag,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  XCircle,
+  FileText,
+  CornerUpLeft,
+  Trash2
+} from 'lucide-react';
 import { entryTypes, getAccountSuggestionsByEntryType } from '@/utils/tallyOperations';
 
 // Mock accounts for demonstration - you can replace with your actual accounts data
@@ -24,6 +37,7 @@ const allAccounts = [
   { id: 'purchases', name: 'Purchases', type: 'expense' },
   { id: 'purchase_returns', name: 'Purchase Returns', type: 'expense' },
   { id: 'inventory_loss', name: 'Inventory Loss', type: 'expense' },
+  { id: 'wastage_expense', name: 'Wastage Expense', type: 'expense' },
   { id: 'rent', name: 'Rent Expense', type: 'expense' },
   { id: 'salary', name: 'Salary Expense', type: 'expense' },
   { id: 'utilities', name: 'Utilities Expense', type: 'expense' },
@@ -195,12 +209,19 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
   // Helper function to get the appropriate icon for entry types
   const getEntryTypeIcon = (iconName: string) => {
     switch (iconName) {
-      case 'tally-1': return <Tally1 className="h-4 w-4" />;
-      case 'tally-2': return <Tally2 className="h-4 w-4" />;
-      case 'tally-3': return <Tally3 className="h-4 w-4" />;
-      case 'tally-4': return <Tally4 className="h-4 w-4" />;
-      case 'tally-5': return <Tally5 className="h-4 w-4" />;
-      default: return <Tally1 className="h-4 w-4" />;
+      case 'receipt': return <Receipt className="h-4 w-4" />;
+      case 'credit-card': return <CreditCard className="h-4 w-4" />;
+      case 'repeat': return <Repeat className="h-4 w-4" />;
+      case 'book-open': return <BookOpen className="h-4 w-4" />;
+      case 'shopping-cart': return <ShoppingCart className="h-4 w-4" />;
+      case 'shopping-bag': return <ShoppingBag className="h-4 w-4" />;
+      case 'arrow-down-circle': return <ArrowDownCircle className="h-4 w-4" />;
+      case 'arrow-up-circle': return <ArrowUpCircle className="h-4 w-4" />;
+      case 'x-circle': return <XCircle className="h-4 w-4" />;
+      case 'file-text': return <FileText className="h-4 w-4" />;
+      case 'corner-up-left': return <CornerUpLeft className="h-4 w-4" />;
+      case 'trash-2': return <Trash2 className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
     }
   };
 
