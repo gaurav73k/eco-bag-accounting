@@ -30,6 +30,7 @@ interface EntryDialogProps {
   disabled?: boolean;
   saveLabel?: string;
   hideFooter?: boolean;
+  showCloseButton?: boolean;
 }
 
 // Export as named export
@@ -49,6 +50,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
   disabled = false,
   saveLabel = 'Save',
   hideFooter = false,
+  showCloseButton = true,
 }) => {
   const sizeClasses = {
     sm: 'sm:max-w-md',
@@ -101,9 +103,11 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
             <DialogTitle>{title}</DialogTitle>
             {description && <DialogDescription>{description}</DialogDescription>}
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-            <X className="h-4 w-4" />
-          </Button>
+          {showCloseButton && (
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </DialogHeader>
         
         <div className="py-4">

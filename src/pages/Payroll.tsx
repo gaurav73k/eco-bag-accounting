@@ -14,7 +14,9 @@ import {
   Search, 
   Filter,
   FileText,
-  Calendar
+  Calendar,
+  Edit,
+  MoreHorizontal
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -26,8 +28,8 @@ import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import EntryDialog from '@/components/ui/entry-dialog';
 import EmployeePayrollForm from '@/components/forms/EmployeePayrollForm';
+import EmployeeForm from '@/components/forms/EmployeeForm';
 
-// Mock data for employees
 const employees = [
   { id: 'EMP-001', name: 'Rahul Sharma', position: 'Factory Supervisor', department: 'Production', joiningDate: '2020-04-15', basicSalary: 25000 },
   { id: 'EMP-002', name: 'Anjali Patel', position: 'Machine Operator', department: 'Production', joiningDate: '2021-02-10', basicSalary: 18000 },
@@ -41,7 +43,6 @@ const employees = [
   { id: 'EMP-010', name: 'Rajan Shrestha', position: 'Administrative Assistant', department: 'Admin', joiningDate: '2022-02-01', basicSalary: 22000 },
 ];
 
-// Mock data for payroll
 const payrollData = [
   { id: 'PAY-001', employeeId: 'EMP-001', employeeName: 'Rahul Sharma', month: 'June 2023', basicSalary: 25000, overtime: 2000, bonus: 0, deductions: 1500, netSalary: 25500, status: 'paid', paymentDate: '2023-06-30' },
   { id: 'PAY-002', employeeId: 'EMP-002', employeeName: 'Anjali Patel', month: 'June 2023', basicSalary: 18000, overtime: 1200, bonus: 0, deductions: 800, netSalary: 18400, status: 'paid', paymentDate: '2023-06-30' },
@@ -55,7 +56,6 @@ const payrollData = [
   { id: 'PAY-010', employeeId: 'EMP-010', employeeName: 'Rajan Shrestha', month: 'June 2023', basicSalary: 22000, overtime: 0, bonus: 0, deductions: 1200, netSalary: 20800, status: 'paid', paymentDate: '2023-06-30' },
 ];
 
-// Get unique departments for filtering
 const departments = [...new Set(employees.map(employee => employee.department))];
 
 const Payroll: React.FC = () => {
@@ -64,11 +64,11 @@ const Payroll: React.FC = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const { toast } = useToast();
   
-  // Add state for employee dialog and process payroll dialog
   const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false);
+  const [showEditEmployeeDialog, setShowEditEmployeeDialog] = useState(false);
   const [showProcessPayrollDialog, setShowProcessPayrollDialog] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
 
-  // Filter data based on search term, current tab, and selected department
   const filteredData = currentTab === 'employees' 
     ? employees.filter(employee => {
         const matchesSearch = 
@@ -136,20 +136,30 @@ const Payroll: React.FC = () => {
     }
   };
 
-  // Handle adding a new employee
+  const handleEditEmployee = (employee: any) => {
+    setSelectedEmployee(employee);
+    setShowEditEmployeeDialog(true);
+  };
+
   const handleAddEmployee = (employeeData: any) => {
-    // In a real app, this would send data to a server
     console.log("Adding new employee:", employeeData);
     toast({
       title: "Employee Added",
-      description: `${employeeData.firstName} ${employeeData.lastName} has been added successfully.`,
+      description: `${employeeData.name} has been added successfully.`,
     });
     setShowAddEmployeeDialog(false);
   };
 
-  // Handle processing payroll
+  const handleUpdateEmployee = (employeeData: any) => {
+    console.log("Updating employee:", employeeData);
+    toast({
+      title: "Employee Updated",
+      description: `${employeeData.name} has been updated successfully.`,
+    });
+    setShowEditEmployeeDialog(false);
+  };
+
   const handleProcessPayroll = (payrollData: any) => {
-    // In a real app, this would process the payroll data
     console.log("Processing payroll:", payrollData);
     toast({
       title: "Payroll Processed",
@@ -158,12 +168,24 @@ const Payroll: React.FC = () => {
     setShowProcessPayrollDialog(false);
   };
 
-  // Calculate total payroll amount for the month
   const totalPayroll = payrollData.reduce((total, entry) => total + entry.netSalary, 0);
 
-  // Safe function to format numbers with toLocaleString
   const formatNumber = (value: number | undefined): string => {
     return value !== undefined ? value.toLocaleString() : '0';
+  };
+
+  const convertToFormValues = (employee: any) => {
+    return {
+      name: employee.name || '',
+      position: employee.position || '',
+      email: `${employee.name.split(' ')[0].toLowerCase()}@example.com`,
+      phone: '9800000000',
+      salary: employee.basicSalary?.toString() || '',
+      department: employee.department?.toLowerCase() || '',
+      joinDate: employee.joiningDate || '',
+      address: 'Kathmandu, Nepal',
+      notes: ''
+    };
   };
 
   return (
@@ -350,6 +372,7 @@ const Payroll: React.FC = () => {
                         <TableHead>Department</TableHead>
                         <TableHead>Joining Date</TableHead>
                         <TableHead className="text-right">Basic Salary</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -371,11 +394,22 @@ const Payroll: React.FC = () => {
                           </TableCell>
                           <TableCell>{employee.joiningDate}</TableCell>
                           <TableCell className="text-right font-medium">Rs. {formatNumber(employee.basicSalary)}</TableCell>
+                          <TableCell className="text-right">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleEditEmployee(employee)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                       {filteredData.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-8">
+                          <TableCell colSpan={7} className="text-center py-8">
                             No employees found. Try adjusting your search.
                           </TableCell>
                         </TableRow>
@@ -399,10 +433,31 @@ const Payroll: React.FC = () => {
         isCreate={true}
         hideFooter={true}
       >
-        <EmployeePayrollForm 
+        <EmployeeForm 
           onSubmit={handleAddEmployee} 
           onCancel={() => setShowAddEmployeeDialog(false)} 
         />
+      </EntryDialog>
+
+      <EntryDialog
+        title="Edit Employee Information"
+        description="Update employee details"
+        isOpen={showEditEmployeeDialog}
+        onClose={() => setShowEditEmployeeDialog(false)}
+        size="lg"
+        entityType="employee"
+        entityId={selectedEmployee?.id}
+        entityName={selectedEmployee?.name}
+        isEdit={true}
+        hideFooter={true}
+      >
+        {selectedEmployee && (
+          <EmployeeForm 
+            defaultValues={convertToFormValues(selectedEmployee)}
+            onSubmit={handleUpdateEmployee} 
+            onCancel={() => setShowEditEmployeeDialog(false)} 
+          />
+        )}
       </EntryDialog>
 
       <EntryDialog
