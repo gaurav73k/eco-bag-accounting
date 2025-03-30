@@ -422,7 +422,7 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="" disabled>Select an account</SelectItem>
+                    {/* Removed the troublesome SelectItem with empty value */}
                     
                     {/* Show suggested accounts if available */}
                     {suggestedAccounts.length > 0 && (
@@ -553,7 +553,7 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
               <SelectValue placeholder="Select cost center (optional)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               <SelectItem value="admin">Administration</SelectItem>
               <SelectItem value="sales">Sales Department</SelectItem>
               <SelectItem value="production">Production</SelectItem>
