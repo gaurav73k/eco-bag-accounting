@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 import { entryTypes, getAccountSuggestionsByEntryType } from '@/utils/tallyOperations';
 
-// Mock accounts for demonstration - you can replace with your actual accounts data
 const allAccounts = [
   { id: 'cash', name: 'Cash', type: 'asset' },
   { id: 'bank', name: 'Bank Account', type: 'asset' },
@@ -68,15 +67,14 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
     notes: '',
     partyName: '',
     billNumber: '',
-    isGstApplicable: false,
-    gstType: 'igst',
-    gstRate: '18',
+    isVatApplicable: false,
+    vatType: 'standard',
+    vatRate: '13',
     costCenter: '',
   });
 
   const [suggestedAccounts, setSuggestedAccounts] = useState<any[]>([]);
   
-  // Update suggested accounts when entry type changes
   useEffect(() => {
     const suggestions = getAccountSuggestionsByEntryType(formData.entryType);
     setSuggestedAccounts(suggestions);
@@ -100,9 +98,7 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
     const updatedEntries = [...formData.entries];
     updatedEntries[index] = { ...updatedEntries[index], [field]: value };
     
-    // If changing entry type to debit/credit, adjust the counterpart accordingly
     if (field === 'type') {
-      // Find the matching pair index (typically the next entry)
       const pairIndex = index === 0 ? 1 : 0;
       updatedEntries[pairIndex] = { 
         ...updatedEntries[pairIndex], 
@@ -117,7 +113,6 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
     const updatedEntries = [...formData.entries];
     updatedEntries[index] = { ...updatedEntries[index], amount: value };
     
-    // Update the other entry's amount to match for double-entry bookkeeping
     if (index === 0 && value) {
       updatedEntries[1] = { ...updatedEntries[1], amount: value };
     } else if (index === 1 && value) {
@@ -160,19 +155,16 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
       return false;
     }
     
-    // Check if all accounts are selected
     if (formData.entries.some(entry => !entry.accountId)) {
       toast.error("Please select all accounts for this transaction");
       return false;
     }
     
-    // Check if amounts are valid
     if (formData.entries.some(entry => !entry.amount || parseFloat(entry.amount) <= 0)) {
       toast.error("Please enter valid amounts for all entries");
       return false;
     }
     
-    // Check if debits equal credits
     const totalDebit = formData.entries
       .filter(entry => entry.type === 'debit')
       .reduce((sum, entry) => sum + parseFloat(entry.amount), 0);
@@ -206,7 +198,6 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
     onSubmit(tallyEntry);
   };
 
-  // Helper function to get the appropriate icon for entry types
   const getEntryTypeIcon = (iconName: string) => {
     switch (iconName) {
       case 'receipt': return <Receipt className="h-4 w-4" />;
@@ -330,51 +321,52 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
 
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Label htmlFor="isGstApplicable">
-            GST Applicable
-            <TooltipGuidance content="Apply GST calculations to this transaction" />
+          <Label htmlFor="isVatApplicable">
+            VAT Applicable
+            <TooltipGuidance content="Apply VAT calculations to this transaction" />
           </Label>
           <input 
             type="checkbox" 
-            id="isGstApplicable"
-            name="isGstApplicable"
-            checked={formData.isGstApplicable}
+            id="isVatApplicable"
+            name="isVatApplicable"
+            checked={formData.isVatApplicable}
             onChange={handleCheckboxChange}
             className="h-4 w-4 rounded border-gray-300 text-indigo-600"
           />
         </div>
         
-        {formData.isGstApplicable && (
+        {formData.isVatApplicable && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             <div>
-              <Label htmlFor="gstType">GST Type</Label>
+              <Label htmlFor="vatType">VAT Type</Label>
               <Select 
-                value={formData.gstType} 
-                onValueChange={(value) => handleSelectChange('gstType', value)}
+                value={formData.vatType} 
+                onValueChange={(value) => handleSelectChange('vatType', value)}
               >
-                <SelectTrigger id="gstType">
+                <SelectTrigger id="vatType">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="igst">IGST</SelectItem>
-                  <SelectItem value="cgst_sgst">CGST & SGST</SelectItem>
+                  <SelectItem value="standard">Standard VAT</SelectItem>
+                  <SelectItem value="zero">Zero-rated</SelectItem>
+                  <SelectItem value="exempt">Exempt</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label htmlFor="gstRate">GST Rate (%)</Label>
+              <Label htmlFor="vatRate">VAT Rate (%)</Label>
               <Select 
-                value={formData.gstRate} 
-                onValueChange={(value) => handleSelectChange('gstRate', value)}
+                value={formData.vatRate} 
+                onValueChange={(value) => handleSelectChange('vatRate', value)}
               >
-                <SelectTrigger id="gstRate">
+                <SelectTrigger id="vatRate">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="0">0%</SelectItem>
                   <SelectItem value="5">5%</SelectItem>
-                  <SelectItem value="12">12%</SelectItem>
+                  <SelectItem value="13">13%</SelectItem>
                   <SelectItem value="18">18%</SelectItem>
                   <SelectItem value="28">28%</SelectItem>
                 </SelectContent>
@@ -422,9 +414,6 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
                   <SelectContent>
-                    {/* Removed the troublesome SelectItem with empty value */}
-                    
-                    {/* Show suggested accounts if available */}
                     {suggestedAccounts.length > 0 && (
                       <>
                         <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
@@ -441,7 +430,6 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
                       </>
                     )}
                     
-                    {/* List all accounts */}
                     {allAccounts.map(account => (
                       <SelectItem key={account.id} value={account.id}>
                         {account.name} ({account.type})
@@ -507,7 +495,6 @@ const TallyEntryForm: React.FC<TallyEntryFormProps> = ({
           ))}
         </div>
         
-        {/* Display totals */}
         <div className="flex justify-end gap-4 pt-2">
           <div className="text-sm">
             <span className="font-medium">Total Debit: </span> 
