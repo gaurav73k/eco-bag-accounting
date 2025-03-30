@@ -18,6 +18,11 @@ import {
   LogOut,
   Settings,
   UserCircle,
+  Tally1,
+  Tally2,
+  Tally3,
+  Tally4,
+  Tally5,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
