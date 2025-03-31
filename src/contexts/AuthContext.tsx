@@ -29,7 +29,7 @@ export type User = {
 type AuthContextType = {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   hasPermission: (permission: Permission) => boolean;
 };
@@ -58,6 +58,18 @@ const roles: Record<string, UserRole> = {
   }
 };
 
+// Hardcoded users for initial setup (in production, this would be from a database)
+// WARNING: This is only for initial setup and should be replaced with a real backend
+const authorizedUsers = [
+  {
+    email: "admin@example.com",
+    password: "Admin@123!",  // In production, this would be hashed
+    roleId: "admin",
+    name: "System Administrator",
+    id: "1"
+  }
+];
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
@@ -78,44 +90,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      // Ensure role object is properly attached
-      const userWithRole = {
-        ...parsedUser,
-        role: roles[parsedUser.roleId] || roles['viewer']
-      };
-      setUser(userWithRole);
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        // Ensure role object is properly attached
+        const userWithRole = {
+          ...parsedUser,
+          role: roles[parsedUser.roleId] || roles['viewer']
+        };
+        setUser(userWithRole);
+      } catch (error) {
+        console.error("Failed to parse stored user data:", error);
+        localStorage.removeItem('user');
+      }
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
-    // Simple mock authentication - in a real app, this would call an API
-    if (email && password) {
-      // Determine role based on email for demo purposes
-      let roleId = 'viewer';
-      if (email.includes('admin')) {
-        roleId = 'admin';
-      } else if (email.includes('accountant')) {
-        roleId = 'accountant';
-      } else if (email.includes('manager')) {
-        roleId = 'manager';
-      }
+  const login = async (email: string, password: string): Promise<boolean> => {
+    // Basic security check - in production, this would call a backend API with proper auth
+    if (!email || !password) {
+      toast.error('Please provide both email and password');
+      return false;
+    }
+    
+    // Find user (in production, this would be an API call)
+    const foundUser = authorizedUsers.find(u => 
+      u.email.toLowerCase() === email.toLowerCase() && 
+      u.password === password
+    );
+    
+    if (foundUser) {
+      // In a real system, the password would never be stored or transmitted client-side
+      const { password: _, ...userWithoutPassword } = foundUser;
       
-      // Mock user data with role information
-      const mockUser: User = {
-        id: '1',
-        name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
-        email: email,
-        roleId: roleId,
-        role: roles[roleId]
+      const userObject: User = {
+        ...userWithoutPassword,
+        role: roles[foundUser.roleId]
       };
       
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      setUser(userObject);
+      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
       toast.success('Successfully logged in');
       navigate('/');
+      return true;
     } else {
       toast.error('Invalid credentials');
+      return false;
     }
   };
 

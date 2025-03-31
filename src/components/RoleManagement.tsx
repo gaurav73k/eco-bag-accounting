@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,7 @@ type User = {
   active: boolean;
 };
 
-// Initial sample data
+// Initial permissions list
 const permissionsList: Permission[] = [
   { id: 'view_dashboard', name: 'View Dashboard', description: 'Can view the main dashboard' },
   { id: 'manage_sales', name: 'Manage Sales', description: 'Can create, edit, and delete sales' },
@@ -62,7 +61,7 @@ const permissionsList: Permission[] = [
   { id: 'manage_settings', name: 'Manage Settings', description: 'Can modify system settings' },
 ];
 
-// Initial roles
+// Initial roles - only include the Super Admin role
 const initialRoles: Role[] = [
   {
     id: '1',
@@ -72,56 +71,12 @@ const initialRoles: Role[] = [
       acc[permission.id] = true;
       return acc;
     }, {} as Record<string, boolean>),
-  },
-  {
-    id: '2',
-    name: 'Accountant',
-    description: 'Access to financial data and operations',
-    permissions: {
-      view_dashboard: true,
-      view_sales: true,
-      view_purchases: true,
-      view_inventory: true,
-      manage_ledger: true,
-      view_ledger: true,
-      view_payroll: true,
-      generate_reports: true,
-    },
-  },
-  {
-    id: '3',
-    name: 'Sales Manager',
-    description: 'Manages sales and related data',
-    permissions: {
-      view_dashboard: true,
-      manage_sales: true,
-      view_sales: true,
-      view_inventory: true,
-      generate_reports: true,
-    },
-  },
-  {
-    id: '4',
-    name: 'Inventory Manager',
-    description: 'Manages inventory and stock',
-    permissions: {
-      view_dashboard: true,
-      view_sales: true,
-      view_purchases: true,
-      manage_inventory: true,
-      view_inventory: true,
-      generate_reports: true,
-    },
-  },
+  }
 ];
 
-// Initial users
+// Initial users - only include the admin user
 const initialUsers: User[] = [
-  { id: '1', name: 'Admin User', email: 'admin@example.com', role: '1', active: true },
-  { id: '2', name: 'John Smith', email: 'john@example.com', role: '2', active: true },
-  { id: '3', name: 'Sarah Jones', email: 'sarah@example.com', role: '3', active: true },
-  { id: '4', name: 'Michael Lee', email: 'michael@example.com', role: '4', active: true },
-  { id: '5', name: 'David Chen', email: 'david@example.com', role: '2', active: false },
+  { id: '1', name: 'Admin User', email: 'admin@example.com', role: '1', active: true }
 ];
 
 const RoleManagement: React.FC = () => {
@@ -171,23 +126,6 @@ const RoleManagement: React.FC = () => {
     setIsRoleDialogOpen(false);
     setCurrentRole(null);
     toast.success(`Role ${role.id ? 'updated' : 'created'} successfully`);
-  };
-
-  const handleTogglePermission = (roleId: string, permissionId: string, value: boolean) => {
-    setRoles(
-      roles.map((role) => {
-        if (role.id === roleId) {
-          return {
-            ...role,
-            permissions: {
-              ...role.permissions,
-              [permissionId]: value,
-            },
-          };
-        }
-        return role;
-      })
-    );
   };
 
   // User handlers
