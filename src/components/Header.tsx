@@ -22,14 +22,19 @@ import {
   CreditCard,
   Repeat,
   BookOpen,
-  FileText
+  FileText,
+  Menu
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
 import HistoryTracker from '@/components/HistoryTracker';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onMenuToggle?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onMenuToggle }) => {
   const isMobile = useIsMobile();
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -43,7 +48,18 @@ const Header: React.FC = () => {
 
   return (
     <header className="flex items-center justify-between bg-background/95 backdrop-blur border-b border-border px-4 py-3 sticky top-0 z-50">
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
+        {isMobile && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onMenuToggle}
+            className="md:hidden"
+          >
+            <Menu className="h-5 w-5" />
+            <TooltipGuidance content="Menu" side="bottom" />
+          </Button>
+        )}
         <Logo size={isMobile ? 'sm' : 'md'} />
       </div>
 
