@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
@@ -19,9 +19,12 @@ import {
   BarChart4,
   Package,
   Building,
-  HelpCircle
+  HelpCircle,
+  X
 } from 'lucide-react';
 import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from './ui/button';
 
 const navigationItems = [
   {
@@ -92,28 +95,56 @@ const navigationItems = [
   },
 ];
 
-const Navigation: React.FC = () => {
+interface NavigationProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
   const location = useLocation();
+  const isMobile = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // Close sidebar when route changes on mobile
+  useEffect(() => {
+    if (isMobile && onClose) {
+      onClose();
+    }
+  }, [location.pathname, isMobile, onClose]);
+
+  // Handle the sidebar display based on device and state
+  const sidebarClasses = cn(
+    "fixed h-[calc(100vh-4rem)] top-16 bottom-0 border-r border-border/40 glass-effect transition-all duration-300 ease-cubic-bezier z-40",
+    isCollapsed && !isMobile ? "w-[70px]" : "w-[240px]",
+    isMobile ? (isOpen ? "left-0" : "-left-full") : "left-0"
+  );
+
   return (
-    <aside 
-      className={cn(
-        "fixed h-[calc(100vh-4rem)] top-16 left-0 bottom-0 border-r border-border/40 glass-effect transition-all duration-300 ease-cubic-bezier z-40",
-        isCollapsed ? "w-[70px]" : "w-[240px]"
-      )}
-    >
+    <aside className={sidebarClasses}>
       <div className="h-full flex flex-col py-4">
-        <div className="px-4 mb-4 flex justify-end">
-          <button 
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1 rounded-full hover:bg-accent transition-colors"
-          >
-            <ChevronRight className={cn(
-              "h-4 w-4 transition-transform duration-300",
-              isCollapsed ? "rotate-180" : ""
-            )} />
-          </button>
+        <div className="px-4 mb-4 flex justify-between items-center">
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="md:hidden"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
+          
+          {!isMobile && (
+            <button 
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-1 rounded-full hover:bg-accent transition-colors ml-auto"
+            >
+              <ChevronRight className={cn(
+                "h-4 w-4 transition-transform duration-300",
+                isCollapsed ? "rotate-180" : ""
+              )} />
+            </button>
+          )}
         </div>
         
         <nav className="flex-1 overflow-auto scrollbar-hide">
@@ -130,21 +161,21 @@ const Navigation: React.FC = () => {
                   )}
                 >
                   <span className="flex-shrink-0">{item.icon}</span>
-                  {!isCollapsed && (
+                  {(!isCollapsed || isMobile) && (
                     <span className="whitespace-nowrap overflow-hidden transition-all duration-300">
                       {item.name}
                     </span>
                   )}
                   
                   {/* Tooltip for collapsed state */}
-                  {isCollapsed && (
+                  {isCollapsed && !isMobile && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                       <div className="font-medium">{item.name}</div>
                       <div className="text-xs text-muted-foreground">{item.description}</div>
                     </div>
                   )}
                   
-                  {!isCollapsed && (
+                  {((!isCollapsed && !isMobile) || isMobile) && (
                     <TooltipGuidance
                       content={item.description}
                       side="right"
@@ -159,7 +190,7 @@ const Navigation: React.FC = () => {
         </nav>
         
         <div className="mt-auto px-3">
-          {!isCollapsed && (
+          {(!isCollapsed || isMobile) && (
             <div className="text-xs text-muted-foreground py-2 text-center">
               © 2023 Om Ganapati Bag Udhyog
             </div>

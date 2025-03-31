@@ -8,6 +8,8 @@ import FinancialOverviewChart from '@/components/dashboard/FinancialOverviewChar
 import InventorySummaryCard from '@/components/dashboard/InventorySummaryCard';
 import { Button } from '@/components/ui/button';
 import { ArrowDownUp, DollarSign, ShoppingCart, Package, PlusCircle } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 // Empty initial data
 const transactions = [];
@@ -23,6 +25,12 @@ const chartData = [
 const inventoryItems = [];
 
 const Index: React.FC = () => {
+  const isMobile = useIsMobile();
+  
+  const handleAddTransaction = () => {
+    toast.info('Transaction feature will be implemented with Supabase backend');
+  };
+
   return (
     <Layout>
       <div className="animate-fade-in">
@@ -30,13 +38,13 @@ const Index: React.FC = () => {
           title="Financial Dashboard" 
           description="Overview of your business finances and operations"
         >
-          <Button size="sm">
+          <Button size="sm" onClick={handleAddTransaction}>
             <PlusCircle className="h-4 w-4 mr-2" />
             Add Transaction
           </Button>
         </PageTitle>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard 
             title="Total Sales (MTD)" 
             value="Rs. 0" 

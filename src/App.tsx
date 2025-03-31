@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { FiscalYearProvider } from "./contexts/FiscalYearContext";
 
 import Index from "./pages/Index";
 import DayBook from "./pages/DayBook";
@@ -104,7 +105,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <FiscalYearProvider>
+            <AppRoutes />
+          </FiscalYearProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
