@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
@@ -16,73 +17,78 @@ import {
   FileText,
   Calendar,
   Edit,
-  MoreHorizontal
+  MoreHorizontal,
+  CheckSquare,
+  Trash2
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import EntryDialog from '@/components/ui/entry-dialog';
 import EmployeePayrollForm from '@/components/forms/EmployeePayrollForm';
 import EmployeeForm from '@/components/forms/EmployeeForm';
-
-const employees = [
-  { id: 'EMP-001', name: 'Rahul Sharma', position: 'Factory Supervisor', department: 'Production', joiningDate: '2020-04-15', basicSalary: 25000 },
-  { id: 'EMP-002', name: 'Anjali Patel', position: 'Machine Operator', department: 'Production', joiningDate: '2021-02-10', basicSalary: 18000 },
-  { id: 'EMP-003', name: 'Deepak Thapa', position: 'Machine Operator', department: 'Production', joiningDate: '2021-03-22', basicSalary: 18000 },
-  { id: 'EMP-004', name: 'Priya Singh', position: 'Machine Operator', department: 'Production', joiningDate: '2021-05-18', basicSalary: 18000 },
-  { id: 'EMP-005', name: 'Sanjay Kumar', position: 'Machine Operator', department: 'Production', joiningDate: '2021-08-05', basicSalary: 18000 },
-  { id: 'EMP-006', name: 'Meera Gurung', position: 'Quality Control', department: 'Quality', joiningDate: '2022-01-12', basicSalary: 20000 },
-  { id: 'EMP-007', name: 'Kamal Basnet', position: 'Delivery Rider', department: 'Logistics', joiningDate: '2022-03-08', basicSalary: 16000 },
-  { id: 'EMP-008', name: 'Sunil Tamang', position: 'Delivery Rider', department: 'Logistics', joiningDate: '2022-04-22', basicSalary: 16000 },
-  { id: 'EMP-009', name: 'Anita Rai', position: 'Accountant', department: 'Finance', joiningDate: '2020-06-15', basicSalary: 28000 },
-  { id: 'EMP-010', name: 'Rajan Shrestha', position: 'Administrative Assistant', department: 'Admin', joiningDate: '2022-02-01', basicSalary: 22000 },
-];
-
-const payrollData = [
-  { id: 'PAY-001', employeeId: 'EMP-001', employeeName: 'Rahul Sharma', month: 'June 2023', basicSalary: 25000, overtime: 2000, bonus: 0, deductions: 1500, netSalary: 25500, status: 'paid', paymentDate: '2023-06-30' },
-  { id: 'PAY-002', employeeId: 'EMP-002', employeeName: 'Anjali Patel', month: 'June 2023', basicSalary: 18000, overtime: 1200, bonus: 0, deductions: 800, netSalary: 18400, status: 'paid', paymentDate: '2023-06-30' },
-  { id: 'PAY-003', employeeId: 'EMP-003', employeeName: 'Deepak Thapa', month: 'June 2023', basicSalary: 18000, overtime: 900, bonus: 0, deductions: 800, netSalary: 18100, status: 'paid', paymentDate: '2023-06-30' },
-  { id: 'PAY-004', employeeId: 'EMP-004', employeeName: 'Priya Singh', month: 'June 2023', basicSalary: 18000, overtime: 1500, bonus: 0, deductions: 800, netSalary: 18700, status: 'paid', paymentDate: '2023-06-30' },
-  { id: 'PAY-005', employeeId: 'EMP-005', employeeName: 'Sanjay Kumar', month: 'June 2023', basicSalary: 18000, overtime: 800, bonus: 0, deductions: 800, netSalary: 18000, status: 'paid', paymentDate: '2023-06-30' },
-  { id: 'PAY-006', employeeId: 'EMP-006', employeeName: 'Meera Gurung', month: 'June 2023', basicSalary: 20000, overtime: 0, bonus: 0, deductions: 1000, netSalary: 19000, status: 'paid', paymentDate: '2023-06-30' },
-  { id: 'PAY-007', employeeId: 'EMP-007', employeeName: 'Kamal Basnet', month: 'June 2023', basicSalary: 16000, overtime: 1800, bonus: 500, deductions: 800, netSalary: 17500, status: 'paid', paymentDate: '2023-06-30' },
-  { id: 'PAY-008', employeeId: 'EMP-008', employeeName: 'Sunil Tamang', month: 'June 2023', basicSalary: 16000, overtime: 2200, bonus: 500, deductions: 800, netSalary: 17900, status: 'paid', paymentDate: '2023-06-30' },
-  { id: 'PAY-009', employeeId: 'EMP-009', employeeName: 'Anita Rai', month: 'June 2023', basicSalary: 28000, overtime: 0, bonus: 0, deductions: 1800, netSalary: 26200, status: 'paid', paymentDate: '2023-06-30' },
-  { id: 'PAY-010', employeeId: 'EMP-010', employeeName: 'Rajan Shrestha', month: 'June 2023', basicSalary: 22000, overtime: 0, bonus: 0, deductions: 1200, netSalary: 20800, status: 'paid', paymentDate: '2023-06-30' },
-];
-
-const departments = [...new Set(employees.map(employee => employee.department))];
+import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from 'sonner';
 
 const Payroll: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTab, setCurrentTab] = useState('payroll');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
-  const { toast } = useToast();
+  const { toast: hookToast } = useToast();
+  const { hasPermission } = useAuth();
   
   const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false);
   const [showEditEmployeeDialog, setShowEditEmployeeDialog] = useState(false);
   const [showProcessPayrollDialog, setShowProcessPayrollDialog] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  
+  // Replace dummy data with actual state
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [payrollData, setPayrollData] = useState<any[]>([]);
+  
+  // Bulk operations state
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+
+  const canEdit = hasPermission('edit_entry');
+  const canDelete = hasPermission('delete_entry');
+  const canBulkEdit = hasPermission('bulk_edit');
+  const canBulkDelete = hasPermission('bulk_delete');
+
+  const departments = [...new Set(employees.map(employee => employee.department))];
 
   const filteredData = currentTab === 'employees' 
     ? employees.filter(employee => {
         const matchesSearch = 
-          employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          employee.id.toLowerCase().includes(searchTerm.toLowerCase());
+          employee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          employee.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          employee.id?.toLowerCase().includes(searchTerm.toLowerCase());
         
         if (selectedDepartment === 'all') return matchesSearch;
         return matchesSearch && employee.department === selectedDepartment;
       })
     : payrollData.filter(entry => {
         const matchesSearch = 
-          entry.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          entry.employeeId.toLowerCase().includes(searchTerm.toLowerCase());
+          entry.employeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          entry.employeeId?.toLowerCase().includes(searchTerm.toLowerCase());
         
         if (selectedDepartment === 'all') return matchesSearch;
         const employeeDept = employees.find(e => e.id === entry.employeeId)?.department;
@@ -122,16 +128,13 @@ const Payroll: React.FC = () => {
         );
       }
       
-      toast({
-        title: "Export Successful",
-        description: `Data exported as ${format.toUpperCase()} file.`,
+      toast.success("Export Successful", {
+        description: `Data exported as ${format.toUpperCase()} file.`
       });
     } catch (error) {
       console.error("Export error:", error);
-      toast({
-        title: "Export Failed",
-        description: "There was an error exporting the data.",
-        variant: "destructive"
+      toast.error("Export Failed", {
+        description: "There was an error exporting the data."
       });
     }
   };
@@ -142,30 +145,117 @@ const Payroll: React.FC = () => {
   };
 
   const handleAddEmployee = (employeeData: any) => {
-    console.log("Adding new employee:", employeeData);
-    toast({
-      title: "Employee Added",
-      description: `${employeeData.name} has been added successfully.`,
+    const newId = `EMP-${String(employees.length + 1).padStart(3, '0')}`;
+    const newEmployee = {
+      ...employeeData,
+      id: newId,
+      position: employeeData.position || 'Staff',
+      department: employeeData.department || 'General',
+      joiningDate: employeeData.joinDate || new Date().toISOString().split('T')[0],
+      basicSalary: parseInt(employeeData.salary) || 0
+    };
+    
+    setEmployees(prev => [...prev, newEmployee]);
+    toast.success("Employee Added", {
+      description: `${employeeData.name} has been added successfully.`
     });
     setShowAddEmployeeDialog(false);
   };
 
   const handleUpdateEmployee = (employeeData: any) => {
-    console.log("Updating employee:", employeeData);
-    toast({
-      title: "Employee Updated",
-      description: `${employeeData.name} has been updated successfully.`,
+    setEmployees(prev => 
+      prev.map(emp => 
+        emp.id === selectedEmployee.id 
+          ? {
+              ...emp, 
+              name: employeeData.name,
+              position: employeeData.position || emp.position,
+              department: employeeData.department || emp.department,
+              joiningDate: employeeData.joinDate || emp.joiningDate,
+              basicSalary: parseInt(employeeData.salary) || emp.basicSalary
+            } 
+          : emp
+      )
+    );
+    
+    toast.success("Employee Updated", {
+      description: `${employeeData.name} has been updated successfully.`
     });
     setShowEditEmployeeDialog(false);
   };
 
   const handleProcessPayroll = (payrollData: any) => {
-    console.log("Processing payroll:", payrollData);
-    toast({
-      title: "Payroll Processed",
-      description: `Payroll for ${payrollData.month} has been processed successfully.`,
+    const newPayrolls = employees.map((employee, index) => {
+      const id = `PAY-${String(index + 1).padStart(3, '0')}`;
+      const basicSalary = employee.basicSalary || 0;
+      const overtime = Math.floor(Math.random() * 2000);
+      const bonus = 0;
+      const deductions = Math.floor(basicSalary * 0.05);
+      const netSalary = basicSalary + overtime + bonus - deductions;
+      
+      return {
+        id,
+        employeeId: employee.id,
+        employeeName: employee.name,
+        month: payrollData.month,
+        basicSalary,
+        overtime,
+        bonus,
+        deductions,
+        netSalary,
+        status: 'pending',
+        paymentDate: ''
+      };
+    });
+    
+    setPayrollData(newPayrolls);
+    toast.success("Payroll Processed", {
+      description: `Payroll for ${payrollData.month} has been processed successfully.`
     });
     setShowProcessPayrollDialog(false);
+  };
+
+  // Bulk operations handlers
+  const toggleBulkMode = () => {
+    setIsBulkMode(!isBulkMode);
+    if (isBulkMode) {
+      setSelectedItems([]);
+    }
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedItems.length === filteredData.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(filteredData.map(item => item.id));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(itemId => itemId !== id) 
+        : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedItems.length === 0) return;
+
+    if (currentTab === 'employees') {
+      setEmployees(prev => prev.filter(employee => !selectedItems.includes(employee.id)));
+      // Also remove associated payroll entries
+      setPayrollData(prev => prev.filter(entry => {
+        const employeeId = entry.employeeId;
+        return !selectedItems.includes(employeeId);
+      }));
+    } else {
+      setPayrollData(prev => prev.filter(entry => !selectedItems.includes(entry.id)));
+    }
+
+    setSelectedItems([]);
+    setIsBulkDeleteDialogOpen(false);
+    toast.success(`${selectedItems.length} ${currentTab === 'employees' ? 'employees' : 'payroll entries'} deleted successfully`);
   };
 
   const totalPayroll = payrollData.reduce((total, entry) => total + entry.netSalary, 0);
@@ -178,7 +268,7 @@ const Payroll: React.FC = () => {
     return {
       name: employee.name || '',
       position: employee.position || '',
-      email: `${employee.name.split(' ')[0].toLowerCase()}@example.com`,
+      email: `${employee.name?.split(' ')[0].toLowerCase()}@example.com` || '',
       phone: '9800000000',
       salary: employee.basicSalary?.toString() || '',
       department: employee.department?.toLowerCase() || '',
@@ -207,6 +297,29 @@ const Payroll: React.FC = () => {
               <PlusCircle className="h-4 w-4 mr-2" />
               {currentTab === 'employees' ? 'Add Employee' : 'Process Payroll'}
             </Button>
+            
+            {(canBulkEdit || canBulkDelete) && (
+              <Button 
+                size="sm" 
+                variant={isBulkMode ? "default" : "outline"}
+                onClick={toggleBulkMode}
+              >
+                <CheckSquare className="h-4 w-4 mr-2" />
+                {isBulkMode ? "Exit Bulk Mode" : "Bulk Mode"}
+              </Button>
+            )}
+            
+            {isBulkMode && selectedItems.length > 0 && canBulkDelete && (
+              <Button 
+                size="sm" 
+                variant="destructive"
+                onClick={() => setIsBulkDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Selected
+              </Button>
+            )}
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -243,7 +356,7 @@ const Payroll: React.FC = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-medium">Monthly Payroll</CardTitle>
-              <CardDescription>June 2023</CardDescription>
+              <CardDescription>Current month</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -264,7 +377,7 @@ const Payroll: React.FC = () => {
               <div className="flex items-center">
                 <Calendar className="h-5 w-5 mr-2 text-primary" />
                 <div className="text-lg font-bold">
-                  July 30, 2023
+                  {new Date(new Date().setDate(new Date().getDate() + 15)).toLocaleDateString()}
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -317,6 +430,14 @@ const Payroll: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        {isBulkMode && (
+                          <TableHead className="w-[50px]">
+                            <Checkbox 
+                              checked={filteredData.length > 0 && selectedItems.length === filteredData.length} 
+                              onCheckedChange={handleToggleSelectAll}
+                            />
+                          </TableHead>
+                        )}
                         <TableHead>Payroll ID</TableHead>
                         <TableHead>Employee</TableHead>
                         <TableHead>Month</TableHead>
@@ -331,6 +452,14 @@ const Payroll: React.FC = () => {
                     <TableBody>
                       {filteredData.map((entry: any) => (
                         <TableRow key={entry.id}>
+                          {isBulkMode && (
+                            <TableCell>
+                              <Checkbox 
+                                checked={selectedItems.includes(entry.id)} 
+                                onCheckedChange={() => handleToggleSelect(entry.id)}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell>{entry.id}</TableCell>
                           <TableCell>
                             <div className="font-medium">{entry.employeeName}</div>
@@ -351,8 +480,8 @@ const Payroll: React.FC = () => {
                       ))}
                       {filteredData.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={9} className="text-center py-8">
-                            No payroll data found. Try adjusting your search.
+                          <TableCell colSpan={isBulkMode ? 10 : 9} className="text-center py-8">
+                            No payroll data found. Try adjusting your search or process a new payroll.
                           </TableCell>
                         </TableRow>
                       )}
@@ -366,6 +495,14 @@ const Payroll: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        {isBulkMode && (
+                          <TableHead className="w-[50px]">
+                            <Checkbox 
+                              checked={filteredData.length > 0 && selectedItems.length === filteredData.length} 
+                              onCheckedChange={handleToggleSelectAll}
+                            />
+                          </TableHead>
+                        )}
                         <TableHead>Employee ID</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Position</TableHead>
@@ -378,6 +515,14 @@ const Payroll: React.FC = () => {
                     <TableBody>
                       {filteredData.map((employee: any) => (
                         <TableRow key={employee.id}>
+                          {isBulkMode && (
+                            <TableCell>
+                              <Checkbox 
+                                checked={selectedItems.includes(employee.id)} 
+                                onCheckedChange={() => handleToggleSelect(employee.id)}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell>{employee.id}</TableCell>
                           <TableCell className="font-medium">{employee.name}</TableCell>
                           <TableCell>{employee.position}</TableCell>
@@ -395,22 +540,26 @@ const Payroll: React.FC = () => {
                           <TableCell>{employee.joiningDate}</TableCell>
                           <TableCell className="text-right font-medium">Rs. {formatNumber(employee.basicSalary)}</TableCell>
                           <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleEditEmployee(employee)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
+                            {!isBulkMode ? (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleEditEmployee(employee)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                            ) : (
+                              <span className="text-center block text-muted-foreground">-</span>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
                       {filteredData.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
-                            No employees found. Try adjusting your search.
+                          <TableCell colSpan={isBulkMode ? 8 : 7} className="text-center py-8">
+                            No employees found. Try adjusting your search or add new employees.
                           </TableCell>
                         </TableRow>
                       )}
@@ -469,7 +618,7 @@ const Payroll: React.FC = () => {
         entityType="payroll"
         isCreate={true}
         onSave={() => handleProcessPayroll({
-          month: "July 2023",
+          month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
           totalEmployees: employees.length,
           totalAmount: totalPayroll
         })}
@@ -477,13 +626,18 @@ const Payroll: React.FC = () => {
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Payroll Period</label>
-            <Select defaultValue="july-2023">
+            <Select defaultValue="current">
               <SelectTrigger>
                 <SelectValue placeholder="Select period" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="july-2023">July 2023</SelectItem>
-                <SelectItem value="august-2023">August 2023</SelectItem>
+                <SelectItem value="current">
+                  {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </SelectItem>
+                <SelectItem value="next">
+                  {new Date(new Date().setMonth(new Date().getMonth() + 1))
+                    .toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -496,9 +650,9 @@ const Payroll: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Employees</SelectItem>
-                <SelectItem value="production">Production Department</SelectItem>
-                <SelectItem value="quality">Quality Department</SelectItem>
-                <SelectItem value="logistics">Logistics Department</SelectItem>
+                {departments.map(dept => (
+                  <SelectItem key={dept} value={dept.toLowerCase()}>{dept} Department</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -509,11 +663,30 @@ const Payroll: React.FC = () => {
               <div>Total Employees:</div>
               <div className="font-medium">{employees.length}</div>
               <div>Estimated Total:</div>
-              <div className="font-medium">Rs. {totalPayroll.toLocaleString()}</div>
+              <div className="font-medium">Rs. {employees.reduce((sum, emp) => sum + (emp.basicSalary || 0), 0).toLocaleString()}</div>
             </div>
           </div>
         </div>
       </EntryDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete multiple items</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedItems.length} {currentTab === 'employees' ? 'employees' : 'payroll entries'}? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">
+              Delete {selectedItems.length} items
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };
