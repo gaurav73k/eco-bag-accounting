@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
@@ -17,7 +18,8 @@ import {
   Eye,
   Download as DownloadIcon,
   RefreshCw,
-  BookOpen
+  BookOpen,
+  List
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogForm } from '@/components/ui/dialog-form';
@@ -25,17 +27,12 @@ import InvoiceForm from '@/components/forms/InvoiceForm';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { ActionButtons, BulkActionButtons } from '@/components/ui/action-buttons';
+import { useAuth } from '@/contexts/AuthContext';
+import { Checkbox } from '@/components/ui/checkbox';
 
-const invoicesData = [
-  { id: 'INV-001', date: '2023-06-15', customer: 'Kathmandu Retail Store', customerInfo: { id: '1', name: 'Kathmandu Retail Store', address: 'Thamel, Kathmandu', phone: '01-4567890', email: 'info@kathmanduretail.com' }, items: [{id: '1', name: 'W-Cut Bags (Small)', quantity: 500, price: 40, total: 20000}], subtotal: 20000, vat: 2600, amount: 22600, status: 'paid', paymentMethod: 'Cash', paymentDate: '2023-06-15', accountingStatus: 'posted' },
-  { id: 'INV-002', date: '2023-06-14', customer: 'Pokhara Gift Shop', customerInfo: { id: '2', name: 'Pokhara Gift Shop', address: 'Lakeside, Pokhara', phone: '061-456789', email: 'pokharagift@example.com' }, items: [{id: '2', name: 'W-Cut Bags (Medium)', quantity: 700, price: 50, total: 35000}], subtotal: 35000, vat: 4550, amount: 39550, status: 'paid', paymentMethod: 'Bank Transfer', paymentDate: '2023-06-14', accountingStatus: 'posted' },
-  { id: 'INV-003', date: '2023-06-13', customer: 'Lalitpur Boutique', customerInfo: { id: '3', name: 'Lalitpur Boutique', address: 'Jawalakhel, Lalitpur', phone: '01-5567890', email: 'boutique@example.com' }, items: [{id: '3', name: 'W-Cut Bags (Large)', quantity: 300, price: 60, total: 18000}], subtotal: 18000, vat: 2340, amount: 20340, status: 'pending', paymentMethod: 'Credit', dueDate: '2023-06-28', accountingStatus: 'posted' },
-  { id: 'INV-004', date: '2023-06-12', customer: 'Bhaktapur Fashion', customerInfo: { id: '4', name: 'Bhaktapur Fashion', address: 'Durbar Square, Bhaktapur', phone: '01-6612345', email: 'bhaktapurfashion@example.com' }, items: [{id: '4', name: 'U-Cut Bags (Medium)', quantity: 500, price: 44, total: 22000}], subtotal: 22000, vat: 2860, amount: 24860, status: 'paid', paymentMethod: 'Cash', paymentDate: '2023-06-12', accountingStatus: 'posted' },
-  { id: 'INV-005', date: '2023-06-10', customer: 'Thamel Souvenirs', customerInfo: { id: '5', name: 'Thamel Souvenirs', address: 'Thamel, Kathmandu', phone: '01-4555555', email: 'souvenirs@example.com' }, items: [{id: '2', name: 'W-Cut Bags (Medium)', quantity: 300, price: 50, total: 15000}], subtotal: 15000, vat: 1950, amount: 16950, status: 'pending', paymentMethod: 'Credit', dueDate: '2023-06-25', accountingStatus: 'posted' },
-  { id: 'INV-006', date: '2023-06-08', customer: 'Chitwan Market', customerInfo: { id: '6', name: 'Chitwan Market', address: 'Bharatpur, Chitwan', phone: '056-123456', email: 'chitwanmarket@example.com' }, items: [{id: '4', name: 'U-Cut Bags (Medium)', quantity: 800, price: 40, total: 32000}], subtotal: 32000, vat: 4160, amount: 36160, status: 'draft', paymentMethod: 'Unpaid', accountingStatus: 'pending' },
-  { id: 'INV-007', date: '2023-06-05', customer: 'Biratnagar Store', customerInfo: { id: '7', name: 'Biratnagar Store', address: 'Main Road, Biratnagar', phone: '021-987654', email: 'biratnagarsrore@example.com' }, items: [{id: '5', name: 'Custom Printed Bags', quantity: 640, price: 75, total: 48000}], subtotal: 48000, vat: 6240, amount: 54240, status: 'draft', paymentMethod: 'Unpaid', accountingStatus: 'pending' },
-  { id: 'INV-008', date: '2023-06-03', customer: 'Dharan Retailer', customerInfo: { id: '8', name: 'Dharan Retailer', address: 'Putali Line, Dharan', phone: '025-123789', email: 'dharanretail@example.com' }, items: [{id: '3', name: 'W-Cut Bags (Large)', quantity: 350, price: 40, total: 14000}], subtotal: 14000, vat: 1820, amount: 15820, status: 'cancelled', paymentMethod: 'Cancelled', accountingStatus: 'cancelled' },
-];
+// Empty state for invoices
+const invoicesData: any[] = [];
 
 const Invoicing: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,13 +41,16 @@ const Invoicing: React.FC = () => {
   const [isViewInvoiceOpen, setIsViewInvoiceOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [isProcessPaymentOpen, setIsProcessPaymentOpen] = useState(false);
+  const [invoices, setInvoices] = useState<any[]>(invoicesData);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
   const { toast: toastNotification } = useToast();
+  const { hasPermission } = useAuth();
 
-  const filteredInvoices = invoicesData.filter(invoice => {
-    const matchesSearch = 
-      invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearch = invoice?.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice?.customer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice?.items?.some((item: any) => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
     
     if (currentTab === 'all') return matchesSearch;
     return matchesSearch && invoice.status === currentTab;
@@ -60,8 +60,17 @@ const Invoicing: React.FC = () => {
     console.log('Invoice created:', data);
     setIsCreateInvoiceOpen(false);
     
+    // Create a new invoice with the data
+    const newInvoice = {
+      id: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
+      date: new Date().toISOString().split('T')[0],
+      ...data
+    };
+    
+    setInvoices(prev => [...prev, newInvoice]);
+    
     toast.success("Invoice Created", {
-      description: `Invoice ${data.invoiceNumber} has been created and recorded in the accounting system.`,
+      description: `Invoice ${newInvoice.id} has been created and recorded in the accounting system.`,
     });
     
     setTimeout(() => {
@@ -106,21 +115,63 @@ const Invoicing: React.FC = () => {
     console.log('Payment processed:', data);
     setIsProcessPaymentOpen(false);
     
-    toast.success("Payment Processed", {
-      description: `Payment for invoice ${selectedInvoice.id} has been processed and recorded.`,
-    });
-    
-    setTimeout(() => {
-      toast.success("Accounting Entry Created", {
-        description: "Payment journal entry was automatically created in the daybook.",
+    // Update invoice status
+    if (selectedInvoice) {
+      setInvoices(prev => 
+        prev.map(invoice => 
+          invoice.id === selectedInvoice.id 
+            ? { ...invoice, status: 'paid', paymentMethod: data.method, paymentDate: data.date } 
+            : invoice
+        )
+      );
+      
+      toast.success("Payment Processed", {
+        description: `Payment for invoice ${selectedInvoice.id} has been processed and recorded.`,
       });
-    }, 1000);
+      
+      setTimeout(() => {
+        toast.success("Accounting Entry Created", {
+          description: "Payment journal entry was automatically created in the daybook.",
+        });
+      }, 1000);
+    }
   };
 
   const recordInDaybook = (invoice: any) => {
+    setInvoices(prev => 
+      prev.map(inv => 
+        inv.id === invoice.id 
+          ? { ...inv, accountingStatus: 'posted' } 
+          : inv
+      )
+    );
+    
     toast.success("Journal Entry Created", {
       description: `Invoice ${invoice.id} has been recorded in the daybook.`,
     });
+  };
+
+  const handleDeleteInvoice = (invoiceId: string) => {
+    setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId));
+  };
+
+  const toggleBulkMode = () => {
+    setIsBulkMode(!isBulkMode);
+    setSelectedInvoices([]);
+  };
+
+  const toggleInvoiceSelection = (invoiceId: string) => {
+    setSelectedInvoices(prev => 
+      prev.includes(invoiceId) 
+        ? prev.filter(id => id !== invoiceId)
+        : [...prev, invoiceId]
+    );
+  };
+
+  const handleBulkDelete = () => {
+    setInvoices(prev => prev.filter(invoice => !selectedInvoices.includes(invoice.id)));
+    toast.success(`Deleted ${selectedInvoices.length} invoices`);
+    setSelectedInvoices([]);
   };
 
   return (
@@ -142,6 +193,12 @@ const Invoicing: React.FC = () => {
                 View Daybook
               </Button>
             </Link>
+            {(hasPermission('bulk_edit') || hasPermission('bulk_delete')) && (
+              <Button variant="outline" onClick={toggleBulkMode}>
+                <List className="h-4 w-4 mr-2" />
+                {isBulkMode ? "Exit Bulk Mode" : "Bulk Mode"}
+              </Button>
+            )}
           </div>
         </PageTitle>
         
@@ -152,7 +209,7 @@ const Invoicing: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {invoicesData.length}
+                {invoices.length}
               </div>
             </CardContent>
           </Card>
@@ -163,11 +220,11 @@ const Invoicing: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {invoicesData.filter(invoice => invoice.status === 'paid').length}
+                {invoices.filter(invoice => invoice.status === 'paid').length}
               </div>
               <p className="text-sm text-muted-foreground">
-                Rs. {invoicesData.filter(invoice => invoice.status === 'paid')
-                  .reduce((sum, invoice) => sum + invoice.amount, 0)
+                Rs. {invoices.filter(invoice => invoice.status === 'paid')
+                  .reduce((sum, invoice) => sum + (invoice.amount || 0), 0)
                   .toLocaleString()}
               </p>
             </CardContent>
@@ -179,11 +236,11 @@ const Invoicing: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-amber-600">
-                {invoicesData.filter(invoice => invoice.status === 'pending').length}
+                {invoices.filter(invoice => invoice.status === 'pending').length}
               </div>
               <p className="text-sm text-muted-foreground">
-                Rs. {invoicesData.filter(invoice => invoice.status === 'pending')
-                  .reduce((sum, invoice) => sum + invoice.amount, 0)
+                Rs. {invoices.filter(invoice => invoice.status === 'pending')
+                  .reduce((sum, invoice) => sum + (invoice.amount || 0), 0)
                   .toLocaleString()}
               </p>
             </CardContent>
@@ -195,16 +252,25 @@ const Invoicing: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {invoicesData.filter(invoice => invoice.status === 'draft').length}
+                {invoices.filter(invoice => invoice.status === 'draft').length}
               </div>
               <p className="text-sm text-muted-foreground">
-                Rs. {invoicesData.filter(invoice => invoice.status === 'draft')
-                  .reduce((sum, invoice) => sum + invoice.amount, 0)
+                Rs. {invoices.filter(invoice => invoice.status === 'draft')
+                  .reduce((sum, invoice) => sum + (invoice.amount || 0), 0)
                   .toLocaleString()}
               </p>
             </CardContent>
           </Card>
         </div>
+        
+        {/* Display bulk action buttons if in bulk mode and items are selected */}
+        {isBulkMode && (
+          <BulkActionButtons
+            selectedCount={selectedInvoices.length}
+            onBulkDelete={handleBulkDelete}
+            onClearSelection={() => setSelectedInvoices([])}
+          />
+        )}
         
         <Card>
           <CardHeader>
@@ -252,6 +318,24 @@ const Invoicing: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {isBulkMode && (
+                        <TableHead className="w-10">
+                          <Checkbox 
+                            checked={
+                              filteredInvoices.length > 0 && 
+                              filteredInvoices.every(invoice => selectedInvoices.includes(invoice.id))
+                            }
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedInvoices(filteredInvoices.map(invoice => invoice.id));
+                              } else {
+                                setSelectedInvoices([]);
+                              }
+                            }}
+                            aria-label="Select all"
+                          />
+                        </TableHead>
+                      )}
                       <TableHead>Invoice #</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Customer</TableHead>
@@ -266,11 +350,20 @@ const Invoicing: React.FC = () => {
                     {filteredInvoices.length > 0 ? (
                       filteredInvoices.map((invoice) => (
                         <TableRow key={invoice.id}>
+                          {isBulkMode && (
+                            <TableCell>
+                              <Checkbox 
+                                checked={selectedInvoices.includes(invoice.id)}
+                                onCheckedChange={() => toggleInvoiceSelection(invoice.id)}
+                                aria-label={`Select invoice ${invoice.id}`}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell className="font-medium">{invoice.id}</TableCell>
                           <TableCell>{invoice.date}</TableCell>
                           <TableCell>{invoice.customer}</TableCell>
-                          <TableCell>{invoice.items.map(item => item.name).join(', ')}</TableCell>
-                          <TableCell className="text-right">Rs. {invoice.amount.toLocaleString()}</TableCell>
+                          <TableCell>{invoice.items?.map((item: any) => item.name).join(', ') || 'None'}</TableCell>
+                          <TableCell className="text-right">Rs. {invoice.amount?.toLocaleString() || '0'}</TableCell>
                           <TableCell>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               invoice.status === 'paid' 
@@ -281,7 +374,7 @@ const Invoicing: React.FC = () => {
                                 ? 'bg-blue-100 text-blue-800'
                                 : 'bg-red-100 text-red-800'
                             }`}>
-                              {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                              {invoice.status?.charAt(0).toUpperCase() + invoice.status?.slice(1) || 'Unknown'}
                             </span>
                           </TableCell>
                           <TableCell>
@@ -292,77 +385,100 @@ const Invoicing: React.FC = () => {
                                 ? 'bg-blue-100 text-blue-800'
                                 : 'bg-red-100 text-red-800'
                             }`}>
-                              {invoice.accountingStatus.charAt(0).toUpperCase() + invoice.accountingStatus.slice(1)}
+                              {invoice.accountingStatus?.charAt(0).toUpperCase() + invoice.accountingStatus?.slice(1) || 'Pending'}
                             </span>
                           </TableCell>
                           <TableCell>
-                            <div className="flex space-x-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => handleViewInvoice(invoice)}
-                                title="View Invoice"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => handlePrintInvoice(invoice.id)}
-                                title="Print Invoice"
-                              >
-                                <Printer className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => handleDownloadInvoice(invoice.id)}
-                                title="Download Invoice"
-                              >
-                                <DownloadIcon className="h-4 w-4" />
-                              </Button>
-                              {invoice.status !== 'cancelled' && (
-                                <>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => handleSendInvoice(invoice.id)}
-                                    title="Send Invoice"
-                                  >
-                                    <Send className="h-4 w-4" />
-                                  </Button>
-                                  {invoice.status === 'pending' && (
+                            {!isBulkMode ? (
+                              <div className="flex space-x-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => handleViewInvoice(invoice)}
+                                  title="View Invoice"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => handlePrintInvoice(invoice.id)}
+                                  title="Print Invoice"
+                                >
+                                  <Printer className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => handleDownloadInvoice(invoice.id)}
+                                  title="Download Invoice"
+                                >
+                                  <DownloadIcon className="h-4 w-4" />
+                                </Button>
+                                {invoice.status !== 'cancelled' && (
+                                  <>
                                     <Button 
                                       variant="ghost" 
                                       size="icon"
-                                      onClick={() => handleProcessPayment(invoice)}
-                                      title="Process Payment"
-                                      className="text-green-600"
+                                      onClick={() => handleSendInvoice(invoice.id)}
+                                      title="Send Invoice"
                                     >
-                                      <RefreshCw className="h-4 w-4" />
+                                      <Send className="h-4 w-4" />
                                     </Button>
-                                  )}
-                                  {invoice.accountingStatus === 'pending' && (
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon"
-                                      onClick={() => recordInDaybook(invoice)}
-                                      title="Record in Daybook"
-                                      className="text-blue-600"
-                                    >
-                                      <BookOpen className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </>
-                              )}
-                            </div>
+                                    {invoice.status === 'pending' && (
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon"
+                                        onClick={() => handleProcessPayment(invoice)}
+                                        title="Process Payment"
+                                        className="text-green-600"
+                                      >
+                                        <RefreshCw className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    {invoice.accountingStatus === 'pending' && (
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon"
+                                        onClick={() => recordInDaybook(invoice)}
+                                        title="Record in Daybook"
+                                        className="text-blue-600"
+                                      >
+                                        <BookOpen className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            ) : (
+                              <ActionButtons
+                                entityType="invoice"
+                                entityId={invoice.id}
+                                entityName={`Invoice ${invoice.id}`}
+                                onDelete={() => handleDeleteInvoice(invoice.id)}
+                                isBulkMode={true}
+                                isSelected={selectedInvoices.includes(invoice.id)}
+                                onToggleSelect={() => toggleInvoiceSelection(invoice.id)}
+                              />
+                            )}
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8">
-                          No invoices found matching your search.
+                        <TableCell colSpan={isBulkMode ? 9 : 8} className="text-center py-8">
+                          {searchTerm ? (
+                            <div>No invoices found matching your search.</div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center p-4">
+                              <FileText className="h-10 w-10 text-muted-foreground mb-2" />
+                              <p className="text-muted-foreground mb-2">No invoices found</p>
+                              <Button onClick={() => setIsCreateInvoiceOpen(true)}>
+                                <PlusCircle className="h-4 w-4 mr-2" />
+                                Create Invoice
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )}
@@ -404,16 +520,16 @@ const Invoicing: React.FC = () => {
                   <div>
                     <h3 className="font-semibold mb-2">Customer Information</h3>
                     <p className="text-sm">{selectedInvoice.customer}</p>
-                    <p className="text-sm">{selectedInvoice.customerInfo?.address}</p>
-                    <p className="text-sm">{selectedInvoice.customerInfo?.phone}</p>
-                    <p className="text-sm">{selectedInvoice.customerInfo?.email}</p>
+                    <p className="text-sm">{selectedInvoice.customerInfo?.address || 'No address provided'}</p>
+                    <p className="text-sm">{selectedInvoice.customerInfo?.phone || 'No phone provided'}</p>
+                    <p className="text-sm">{selectedInvoice.customerInfo?.email || 'No email provided'}</p>
                   </div>
                   <div className="text-right">
                     <h3 className="font-semibold mb-2">Invoice Details</h3>
                     <p className="text-sm">Invoice Number: {selectedInvoice.id}</p>
                     <p className="text-sm">Date: {selectedInvoice.date}</p>
                     <p className="text-sm">Due Date: {selectedInvoice.dueDate || 'N/A'}</p>
-                    <p className="text-sm">Payment Method: {selectedInvoice.paymentMethod}</p>
+                    <p className="text-sm">Payment Method: {selectedInvoice.paymentMethod || 'Not specified'}</p>
                   </div>
                 </div>
               </div>
@@ -431,14 +547,22 @@ const Invoicing: React.FC = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {selectedInvoice.items.map((item: any, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>{item.name}</TableCell>
-                          <TableCell className="text-right">{item.quantity}</TableCell>
-                          <TableCell className="text-right">Rs. {item.price.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">Rs. {item.total.toLocaleString()}</TableCell>
+                      {selectedInvoice.items && selectedInvoice.items.length > 0 ? (
+                        selectedInvoice.items.map((item: any, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>{item.name}</TableCell>
+                            <TableCell className="text-right">{item.quantity}</TableCell>
+                            <TableCell className="text-right">Rs. {item.price?.toLocaleString()}</TableCell>
+                            <TableCell className="text-right">Rs. {item.total?.toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-4">
+                            No items in this invoice
+                          </TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -447,15 +571,15 @@ const Invoicing: React.FC = () => {
                   <div className="w-[300px] space-y-2">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
-                      <span>Rs. {selectedInvoice.subtotal.toLocaleString()}</span>
+                      <span>Rs. {selectedInvoice.subtotal?.toLocaleString() || '0'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>VAT (13%):</span>
-                      <span>Rs. {selectedInvoice.vat.toLocaleString()}</span>
+                      <span>Rs. {selectedInvoice.vat?.toLocaleString() || '0'}</span>
                     </div>
                     <div className="flex justify-between font-bold">
                       <span>Total:</span>
-                      <span>Rs. {selectedInvoice.amount.toLocaleString()}</span>
+                      <span>Rs. {selectedInvoice.amount?.toLocaleString() || '0'}</span>
                     </div>
                   </div>
                 </div>
@@ -500,7 +624,7 @@ const Invoicing: React.FC = () => {
                 </div>
                 <div className="flex justify-between mb-2">
                   <span className="font-medium">Total Amount:</span>
-                  <span className="font-bold">Rs. {selectedInvoice.amount.toLocaleString()}</span>
+                  <span className="font-bold">Rs. {selectedInvoice.amount?.toLocaleString() || '0'}</span>
                 </div>
               </div>
               

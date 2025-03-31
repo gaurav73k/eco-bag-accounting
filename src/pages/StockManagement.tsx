@@ -12,7 +12,7 @@ import { DialogForm } from '@/components/ui/dialog-form';
 import StockForm from '@/components/forms/StockForm';
 import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
 import { cn } from '@/lib/utils';
-import { PlusCircle, Download, AlertTriangle, Search, Package, FileText } from 'lucide-react';
+import { PlusCircle, Download, AlertTriangle, Search, Package, FileText, List } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -22,26 +22,13 @@ import {
 import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
+import { ActionButtons, BulkActionButtons } from '@/components/ui/action-buttons';
+import { useAuth } from '@/contexts/AuthContext';
+import { Checkbox } from '@/components/ui/checkbox';
 
-// Mock data for raw materials
-const initialRawMaterials = [
-  { id: '1', name: 'Non-woven PP Fabric (White)', stock: 250, unit: 'Rolls', reorderLevel: 100, status: 'medium' },
-  { id: '2', name: 'Non-woven PP Fabric (Green)', stock: 50, unit: 'Rolls', reorderLevel: 100, status: 'low' },
-  { id: '3', name: 'Thread Spools', stock: 180, unit: 'Spools', reorderLevel: 50, status: 'good' },
-  { id: '4', name: 'Printing Ink (Black)', stock: 60, unit: 'Liters', reorderLevel: 30, status: 'medium' },
-  { id: '5', name: 'Printing Ink (Red)', stock: 25, unit: 'Liters', reorderLevel: 30, status: 'low' },
-  { id: '6', name: 'Printing Ink (Blue)', stock: 80, unit: 'Liters', reorderLevel: 30, status: 'good' },
-];
-
-// Mock data for finished goods
-const initialFinishedGoods = [
-  { id: '1', name: 'W-Cut Bags (White)', stock: 3500, unit: 'Pieces', reorderLevel: 1000, status: 'good' },
-  { id: '2', name: 'W-Cut Bags (Green)', stock: 1200, unit: 'Pieces', reorderLevel: 1000, status: 'medium' },
-  { id: '3', name: 'U-Cut Bags (White)', stock: 500, unit: 'Pieces', reorderLevel: 1000, status: 'low' },
-  { id: '4', name: 'U-Cut Bags (Green)', stock: 2800, unit: 'Pieces', reorderLevel: 1000, status: 'good' },
-  { id: '5', name: 'Coat Covers', stock: 850, unit: 'Pieces', reorderLevel: 500, status: 'medium' },
-  { id: '6', name: 'Custom-Printed Bags', stock: 300, unit: 'Pieces', reorderLevel: 200, status: 'medium' },
-];
+// Empty state for inventory
+const initialRawMaterials: any[] = [];
+const initialFinishedGoods: any[] = [];
 
 const StockManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,18 +36,27 @@ const StockManagement: React.FC = () => {
   const [rawMaterials, setRawMaterials] = useState(initialRawMaterials);
   const [finishedGoods, setFinishedGoods] = useState(initialFinishedGoods);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const { toast: hookToast } = useToast();
+  const { hasPermission } = useAuth();
 
   // Get current data based on the active tab
   const currentData = currentTab === 'rawMaterials' ?
-    rawMaterials.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase())) :
-    finishedGoods.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    rawMaterials.filter(item => item?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) :
+    finishedGoods.filter(item => item?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
 
   const handleAddStock = (newItem: any) => {
+    // Add id to the new item
+    const itemWithId = {
+      ...newItem,
+      id: `${currentTab === 'rawMaterials' ? 'RAW' : 'FIN'}-${String(currentTab === 'rawMaterials' ? rawMaterials.length + 1 : finishedGoods.length + 1).padStart(3, '0')}`
+    };
+    
     if (currentTab === 'rawMaterials') {
-      setRawMaterials(prev => [...prev, newItem]);
+      setRawMaterials(prev => [...prev, itemWithId]);
     } else {
-      setFinishedGoods(prev => [...prev, newItem]);
+      setFinishedGoods(prev => [...prev, itemWithId]);
     }
     
     setIsAddDialogOpen(false);
@@ -71,11 +67,11 @@ const StockManagement: React.FC = () => {
     try {
       exportToCSV(
         currentData.map(item => ({
-          Name: item.name,
-          Stock: item.stock,
-          Unit: item.unit,
-          'Reorder Level': item.reorderLevel,
-          Status: item.status
+          Name: item.name || '',
+          Stock: item.stock || 0,
+          Unit: item.unit || '',
+          'Reorder Level': item.reorderLevel || 0,
+          Status: item.status || ''
         })),
         `${currentTab}-stock-${getFormattedDate()}`
       );
@@ -107,12 +103,45 @@ const StockManagement: React.FC = () => {
     }
   };
 
+  const toggleBulkMode = () => {
+    setIsBulkMode(!isBulkMode);
+    setSelectedItems([]);
+  };
+
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItems(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const handleDeleteItem = (itemId: string) => {
+    if (currentTab === 'rawMaterials') {
+      setRawMaterials(prev => prev.filter(item => item.id !== itemId));
+    } else {
+      setFinishedGoods(prev => prev.filter(item => item.id !== itemId));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (currentTab === 'rawMaterials') {
+      setRawMaterials(prev => prev.filter(item => !selectedItems.includes(item.id)));
+    } else {
+      setFinishedGoods(prev => prev.filter(item => !selectedItems.includes(item.id)));
+    }
+    
+    toast.success(`Deleted ${selectedItems.length} items`);
+    setSelectedItems([]);
+  };
+
   return (
     <Layout>
       <div className="animate-fade-in">
         <PageTitle 
           title="Stock Management" 
           description="Track raw materials and finished goods inventory"
+          icon={<Package className="h-6 w-6" />}
         >
           <div className="flex gap-2">
             <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
@@ -137,10 +166,25 @@ const StockManagement: React.FC = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            {(hasPermission('bulk_edit') || hasPermission('bulk_delete')) && (
+              <Button variant="outline" size="sm" onClick={toggleBulkMode}>
+                <List className="h-4 w-4 mr-2" />
+                {isBulkMode ? "Exit Bulk Mode" : "Bulk Mode"}
+              </Button>
+            )}
           </div>
         </PageTitle>
 
         <div className="space-y-6">
+          {/* Display bulk action buttons if in bulk mode and items are selected */}
+          {isBulkMode && (
+            <BulkActionButtons
+              selectedCount={selectedItems.length}
+              onBulkDelete={handleBulkDelete}
+              onClearSelection={() => setSelectedItems([])}
+            />
+          )}
+          
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -172,31 +216,82 @@ const StockManagement: React.FC = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          {isBulkMode && (
+                            <TableHead className="w-10">
+                              <Checkbox 
+                                checked={
+                                  currentData.length > 0 && 
+                                  currentData.every(item => selectedItems.includes(item.id))
+                                }
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedItems(currentData.map(item => item.id));
+                                  } else {
+                                    setSelectedItems([]);
+                                  }
+                                }}
+                                aria-label="Select all"
+                              />
+                            </TableHead>
+                          )}
                           <TableHead>Item Name</TableHead>
                           <TableHead>Stock</TableHead>
                           <TableHead>Unit</TableHead>
                           <TableHead>Reorder Level</TableHead>
                           <TableHead>Status</TableHead>
+                          {isBulkMode && <TableHead>Actions</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {currentData.map((item) => (
+                        {currentData.length > 0 ? currentData.map((item) => (
                           <TableRow key={item.id}>
+                            {isBulkMode && (
+                              <TableCell>
+                                <Checkbox 
+                                  checked={selectedItems.includes(item.id)}
+                                  onCheckedChange={() => toggleItemSelection(item.id)}
+                                  aria-label={`Select item ${item.name}`}
+                                />
+                              </TableCell>
+                            )}
                             <TableCell>{item.name}</TableCell>
                             <TableCell>{item.stock}</TableCell>
                             <TableCell>{item.unit}</TableCell>
                             <TableCell>{item.reorderLevel}</TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(item.status)}>
-                                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                                {item.status?.charAt(0).toUpperCase() + item.status?.slice(1) || 'Unknown'}
                               </Badge>
                             </TableCell>
+                            {isBulkMode && (
+                              <TableCell>
+                                <ActionButtons
+                                  entityType={currentTab === 'rawMaterials' ? 'raw material' : 'finished good'}
+                                  entityId={item.id}
+                                  entityName={item.name}
+                                  onDelete={() => handleDeleteItem(item.id)}
+                                  isBulkMode={true}
+                                  isSelected={selectedItems.includes(item.id)}
+                                  onToggleSelect={() => toggleItemSelection(item.id)}
+                                />
+                              </TableCell>
+                            )}
                           </TableRow>
-                        ))}
-                        {currentData.length === 0 && (
+                        )) : (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8">
-                              No items found. Try adjusting your search.
+                            <TableCell colSpan={isBulkMode ? 7 : 5} className="text-center py-8">
+                              {searchTerm ? (
+                                <div>No items found matching your search.</div>
+                              ) : (
+                                <div className="flex flex-col items-center justify-center p-4">
+                                  <Package className="h-10 w-10 text-muted-foreground mb-2" />
+                                  <p className="text-muted-foreground mb-2">No raw materials found</p>
+                                  <Button onClick={() => setIsAddDialogOpen(true)}>
+                                    <PlusCircle className="h-4 w-4 mr-2" />
+                                    Add Raw Material
+                                  </Button>
+                                </div>
+                              )}
                             </TableCell>
                           </TableRow>
                         )}
@@ -210,31 +305,82 @@ const StockManagement: React.FC = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          {isBulkMode && (
+                            <TableHead className="w-10">
+                              <Checkbox 
+                                checked={
+                                  currentData.length > 0 && 
+                                  currentData.every(item => selectedItems.includes(item.id))
+                                }
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedItems(currentData.map(item => item.id));
+                                  } else {
+                                    setSelectedItems([]);
+                                  }
+                                }}
+                                aria-label="Select all"
+                              />
+                            </TableHead>
+                          )}
                           <TableHead>Item Name</TableHead>
                           <TableHead>Stock</TableHead>
                           <TableHead>Unit</TableHead>
                           <TableHead>Reorder Level</TableHead>
                           <TableHead>Status</TableHead>
+                          {isBulkMode && <TableHead>Actions</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {currentData.map((item) => (
+                        {currentData.length > 0 ? currentData.map((item) => (
                           <TableRow key={item.id}>
+                            {isBulkMode && (
+                              <TableCell>
+                                <Checkbox 
+                                  checked={selectedItems.includes(item.id)}
+                                  onCheckedChange={() => toggleItemSelection(item.id)}
+                                  aria-label={`Select item ${item.name}`}
+                                />
+                              </TableCell>
+                            )}
                             <TableCell>{item.name}</TableCell>
                             <TableCell>{item.stock}</TableCell>
                             <TableCell>{item.unit}</TableCell>
                             <TableCell>{item.reorderLevel}</TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(item.status)}>
-                                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                                {item.status?.charAt(0).toUpperCase() + item.status?.slice(1) || 'Unknown'}
                               </Badge>
                             </TableCell>
+                            {isBulkMode && (
+                              <TableCell>
+                                <ActionButtons
+                                  entityType={currentTab === 'rawMaterials' ? 'raw material' : 'finished good'}
+                                  entityId={item.id}
+                                  entityName={item.name}
+                                  onDelete={() => handleDeleteItem(item.id)}
+                                  isBulkMode={true}
+                                  isSelected={selectedItems.includes(item.id)}
+                                  onToggleSelect={() => toggleItemSelection(item.id)}
+                                />
+                              </TableCell>
+                            )}
                           </TableRow>
-                        ))}
-                        {currentData.length === 0 && (
+                        )) : (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8">
-                              No items found. Try adjusting your search.
+                            <TableCell colSpan={isBulkMode ? 7 : 5} className="text-center py-8">
+                              {searchTerm ? (
+                                <div>No items found matching your search.</div>
+                              ) : (
+                                <div className="flex flex-col items-center justify-center p-4">
+                                  <Package className="h-10 w-10 text-muted-foreground mb-2" />
+                                  <p className="text-muted-foreground mb-2">No finished goods found</p>
+                                  <Button onClick={() => setIsAddDialogOpen(true)}>
+                                    <PlusCircle className="h-4 w-4 mr-2" />
+                                    Add Finished Good
+                                  </Button>
+                                </div>
+                              )}
                             </TableCell>
                           </TableRow>
                         )}

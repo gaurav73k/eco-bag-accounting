@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -20,7 +21,8 @@ import {
   TrendingUp,
   BarChart3,
   PieChart,
-  Calendar
+  Calendar,
+  List
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,44 +34,12 @@ import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
 import { DialogForm } from '@/components/ui/dialog-form';
+import { ActionButtons, BulkActionButtons } from '@/components/ui/action-buttons';
+import { useAuth } from '@/contexts/AuthContext';
+import { Checkbox } from '@/components/ui/checkbox';
 
-const salesData = [
-  { id: 'INV-001', date: '2023-06-15', customer: 'Kathmandu Retail Store', customerInfo: { id: '1', name: 'Kathmandu Retail Store', address: 'Thamel, Kathmandu', phone: '01-4567890', email: 'info@kathmanduretail.com' }, items: [{id: '1', name: 'W-Cut Bags (Small)', quantity: 500, price: 40, total: 20000}], subtotal: 20000, vat: 2600, amount: 22600, status: 'paid', paymentMethod: 'Cash', paymentDate: '2023-06-15', accountingStatus: 'posted' },
-  { id: 'INV-002', date: '2023-06-14', customer: 'Pokhara Gift Shop', customerInfo: { id: '2', name: 'Pokhara Gift Shop', address: 'Lakeside, Pokhara', phone: '061-456789', email: 'pokharagift@example.com' }, items: [{id: '2', name: 'W-Cut Bags (Medium)', quantity: 700, price: 50, total: 35000}], subtotal: 35000, vat: 4550, amount: 39550, status: 'paid', paymentMethod: 'Bank Transfer', paymentDate: '2023-06-14', accountingStatus: 'posted' },
-  { id: 'INV-003', date: '2023-06-13', customer: 'Lalitpur Boutique', customerInfo: { id: '3', name: 'Lalitpur Boutique', address: 'Jawalakhel, Lalitpur', phone: '01-5567890', email: 'boutique@example.com' }, items: [{id: '3', name: 'W-Cut Bags (Large)', quantity: 300, price: 60, total: 18000}], subtotal: 18000, vat: 2340, amount: 20340, status: 'pending', paymentMethod: 'Credit', dueDate: '2023-06-28', accountingStatus: 'posted' },
-  { id: 'INV-004', date: '2023-06-12', customer: 'Bhaktapur Fashion', customerInfo: { id: '4', name: 'Bhaktapur Fashion', address: 'Durbar Square, Bhaktapur', phone: '01-6612345', email: 'bhaktapurfashion@example.com' }, items: [{id: '4', name: 'U-Cut Bags (Medium)', quantity: 500, price: 44, total: 22000}], subtotal: 22000, vat: 2860, amount: 24860, status: 'paid', paymentMethod: 'Cash', paymentDate: '2023-06-12', accountingStatus: 'posted' },
-  { id: 'INV-005', date: '2023-06-10', customer: 'Thamel Souvenirs', customerInfo: { id: '5', name: 'Thamel Souvenirs', address: 'Thamel, Kathmandu', phone: '01-4555555', email: 'souvenirs@example.com' }, items: [{id: '2', name: 'W-Cut Bags (Medium)', quantity: 300, price: 50, total: 15000}], subtotal: 15000, vat: 1950, amount: 16950, status: 'pending', paymentMethod: 'Credit', dueDate: '2023-06-25', accountingStatus: 'posted' },
-  { id: 'INV-006', date: '2023-06-08', customer: 'Chitwan Market', customerInfo: { id: '6', name: 'Chitwan Market', address: 'Bharatpur, Chitwan', phone: '056-123456', email: 'chitwanmarket@example.com' }, items: [{id: '4', name: 'U-Cut Bags (Medium)', quantity: 800, price: 40, total: 32000}], subtotal: 32000, vat: 4160, amount: 36160, status: 'draft', paymentMethod: 'Unpaid', accountingStatus: 'pending' },
-  { id: 'INV-007', date: '2023-06-05', customer: 'Biratnagar Store', customerInfo: { id: '7', name: 'Biratnagar Store', address: 'Main Road, Biratnagar', phone: '021-987654', email: 'biratnagarsrore@example.com' }, items: [{id: '5', name: 'Custom Printed Bags', quantity: 640, price: 75, total: 48000}], subtotal: 48000, vat: 6240, amount: 54240, status: 'draft', paymentMethod: 'Unpaid', accountingStatus: 'pending' },
-  { id: 'INV-008', date: '2023-06-03', customer: 'Dharan Retailer', customerInfo: { id: '8', name: 'Dharan Retailer', address: 'Putali Line, Dharan', phone: '025-123789', email: 'dharanretail@example.com' }, items: [{id: '3', name: 'W-Cut Bags (Large)', quantity: 350, price: 40, total: 14000}], subtotal: 14000, vat: 1820, amount: 15820, status: 'cancelled', paymentMethod: 'Cancelled', accountingStatus: 'cancelled' },
-];
-
-const pendingInvoices = salesData.filter(sale => sale.status === 'pending');
-
-const topCustomers = [
-  { name: 'Pokhara Gift Shop', sales: 39550, purchases: 15 },
-  { name: 'Kathmandu Retail Store', sales: 22600, purchases: 10 },
-  { name: 'Bhaktapur Fashion', sales: 24860, purchases: 8 },
-  { name: 'Chitwan Market', sales: 36160, purchases: 5 },
-  { name: 'Lalitpur Boutique', sales: 20340, purchases: 4 }
-];
-
-const monthlySalesData = [
-  { month: 'Jan', sales: 150000 },
-  { month: 'Feb', sales: 180000 },
-  { month: 'Mar', sales: 210000 },
-  { month: 'Apr', sales: 240000 },
-  { month: 'May', sales: 270000 },
-  { month: 'Jun', sales: 300000 }
-];
-
-const productPerformance = [
-  { product: 'W-Cut Bags (Small)', sales: 90000, units: 2250 },
-  { product: 'W-Cut Bags (Medium)', sales: 120000, units: 2400 },
-  { product: 'W-Cut Bags (Large)', sales: 75000, units: 1250 },
-  { product: 'U-Cut Bags (Medium)', sales: 60000, units: 1500 },
-  { product: 'Custom Printed Bags', sales: 150000, units: 2000 }
-];
+// Empty state for sales
+const salesData: any[] = [];
 
 const Sales: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,14 +47,18 @@ const Sales: React.FC = () => {
   const [isQuickSaleOpen, setIsQuickSaleOpen] = useState(false);
   const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [sales, setSales] = useState<any[]>(salesData);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedSales, setSelectedSales] = useState<string[]>([]);
   const { toast: toastNotification } = useToast();
+  const { hasPermission } = useAuth();
   const navigate = useNavigate();
 
-  const filteredSales = salesData.filter(sale => {
+  const filteredSales = sales.filter(sale => {
     const matchesSearch = 
-      sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sale.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sale.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+      (sale?.id?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (sale?.customer?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (sale?.items?.some((item: any) => item.name.toLowerCase().includes(searchTerm.toLowerCase())) || false);
     
     if (currentTab === 'all') return matchesSearch;
     return matchesSearch && sale.status === currentTab;
@@ -94,13 +68,12 @@ const Sales: React.FC = () => {
     try {
       exportToCSV(
         filteredSales.map(sale => ({
-          'Invoice #': sale.id,
-          Date: sale.date,
-          Customer: sale.customer,
-          Items: sale.items.map(item => item.name).join(', '),
-          Amount: sale.amount,
-          Status: sale.status,
-          'Payment Method': sale.paymentMethod
+          'Invoice #': sale.id || '',
+          Date: sale.date || '',
+          Customer: sale.customer || '',
+          Items: sale.items?.map((item: any) => item.name).join(', ') || '',
+          Amount: sale.amount || 0,
+          Status: sale.status || ''
         })),
         `sales-data-${getFormattedDate()}`
       );
@@ -122,6 +95,25 @@ const Sales: React.FC = () => {
   const handleQuickSale = (data: any) => {
     console.log('Quick sale processed:', data);
     setIsQuickSaleOpen(false);
+    
+    // Create a new sale record
+    const newSale = {
+      id: `SALE-${String(sales.length + 1).padStart(3, '0')}`,
+      date: new Date().toISOString().split('T')[0],
+      customer: data.customer,
+      items: [{
+        id: '1',
+        name: data.product,
+        quantity: data.quantity,
+        price: data.price,
+        total: data.price * data.quantity
+      }],
+      amount: data.amount,
+      status: 'paid',
+      paymentMethod: data.paymentMethod
+    };
+    
+    setSales(prev => [...prev, newSale]);
     
     toast.success("Sale Processed", {
       description: "Quick sale has been processed and recorded in the system.",
@@ -145,6 +137,29 @@ const Sales: React.FC = () => {
 
   const handleInvoiceClick = (sale: any) => {
     navigate(`/invoicing`);
+  };
+
+  const toggleBulkMode = () => {
+    setIsBulkMode(!isBulkMode);
+    setSelectedSales([]);
+  };
+
+  const toggleSaleSelection = (saleId: string) => {
+    setSelectedSales(prev => 
+      prev.includes(saleId) 
+        ? prev.filter(id => id !== saleId)
+        : [...prev, saleId]
+    );
+  };
+
+  const handleDeleteSale = (saleId: string) => {
+    setSales(prev => prev.filter(sale => sale.id !== saleId));
+  };
+
+  const handleBulkDelete = () => {
+    setSales(prev => prev.filter(sale => !selectedSales.includes(sale.id)));
+    toast.success(`Deleted ${selectedSales.length} sales`);
+    setSelectedSales([]);
   };
 
   return (
@@ -178,6 +193,12 @@ const Sales: React.FC = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            {(hasPermission('bulk_edit') || hasPermission('bulk_delete')) && (
+              <Button variant="outline" onClick={toggleBulkMode}>
+                <List className="h-4 w-4 mr-2" />
+                {isBulkMode ? "Exit Bulk Mode" : "Bulk Mode"}
+              </Button>
+            )}
           </div>
         </PageTitle>
         
@@ -189,10 +210,10 @@ const Sales: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                Rs. {salesData.reduce((sum, sale) => sum + sale.amount, 0).toLocaleString()}
+                Rs. {sales.reduce((sum, sale) => sum + (sale.amount || 0), 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                From {salesData.length} invoices
+                From {sales.length} invoices
               </p>
             </CardContent>
           </Card>
@@ -204,10 +225,10 @@ const Sales: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                Rs. {salesData.filter(sale => sale.status === 'paid').reduce((sum, sale) => sum + sale.amount, 0).toLocaleString()}
+                Rs. {sales.filter(sale => sale.status === 'paid').reduce((sum, sale) => sum + (sale.amount || 0), 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {salesData.filter(sale => sale.status === 'paid').length} paid invoices
+                {sales.filter(sale => sale.status === 'paid').length} paid invoices
               </p>
             </CardContent>
           </Card>
@@ -219,10 +240,10 @@ const Sales: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-amber-600">
-                Rs. {pendingInvoices.reduce((sum, sale) => sum + sale.amount, 0).toLocaleString()}
+                Rs. {sales.filter(sale => sale.status === 'pending').reduce((sum, sale) => sum + (sale.amount || 0), 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {pendingInvoices.length} pending invoices
+                {sales.filter(sale => sale.status === 'pending').length} pending invoices
               </p>
             </CardContent>
           </Card>
@@ -234,72 +255,26 @@ const Sales: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                +12.5%
+                0%
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Increased from last month
+                No prior month data
               </p>
             </CardContent>
           </Card>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Sales Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[220px] flex items-end gap-2">
-                {monthlySalesData.map((item, index) => (
-                  <div key={index} className="relative h-full flex-1 flex flex-col justify-end group">
-                    <div
-                      className="bg-primary rounded-t w-full transition-all duration-300 group-hover:bg-primary/80"
-                      style={{ height: `${(item.sales / 300000) * 100}%` }}
-                    ></div>
-                    <div className="text-xs text-center mt-2">{item.month}</div>
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-foreground text-background px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                      Rs. {item.sales.toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Selling Products</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {productPerformance.slice(0, 4).map((product, index) => (
-                  <div key={index} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>{product.product}</span>
-                      <span className="font-medium">Rs. {product.sales.toLocaleString()}</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                      <div 
-                        className="bg-primary h-full rounded-full" 
-                        style={{ width: `${(product.sales / 150000) * 100}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {product.units} units sold
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <Button variant="link" className="mt-2 p-0 h-auto text-sm">
-                View all products <ChevronRight className="h-3 w-3 ml-1" />
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Display bulk action buttons if in bulk mode and items are selected */}
+        {isBulkMode && (
+          <BulkActionButtons
+            selectedCount={selectedSales.length}
+            onBulkDelete={handleBulkDelete}
+            onClearSelection={() => setSelectedSales([])}
+          />
+        )}
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="md:col-span-2">
+          <Card className="md:col-span-3">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Recent Sales</CardTitle>
@@ -348,6 +323,24 @@ const Sales: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        {isBulkMode && (
+                          <TableHead className="w-10">
+                            <Checkbox 
+                              checked={
+                                filteredSales.length > 0 && 
+                                filteredSales.every(sale => selectedSales.includes(sale.id))
+                              }
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedSales(filteredSales.map(sale => sale.id));
+                                } else {
+                                  setSelectedSales([]);
+                                }
+                              }}
+                              aria-label="Select all"
+                            />
+                          </TableHead>
+                        )}
                         <TableHead>Invoice #</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Customer</TableHead>
@@ -358,35 +351,68 @@ const Sales: React.FC = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredSales.slice(0, 5).map((sale) => (
-                        <TableRow key={sale.id} className="cursor-pointer" onClick={() => handleInvoiceClick(sale)}>
-                          <TableCell>{sale.id}</TableCell>
-                          <TableCell>{sale.date}</TableCell>
-                          <TableCell>{sale.customer}</TableCell>
-                          <TableCell>{sale.items.map(item => item.name).join(', ')}</TableCell>
-                          <TableCell className="text-right">Rs. {sale.amount.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              sale.status === 'paid' 
-                                ? 'bg-green-100 text-green-800' 
-                                : sale.status === 'pending'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm" className="h-8 px-2">
-                              View <ArrowRight className="h-3 w-3 ml-1" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {filteredSales.length === 0 && (
+                      {filteredSales.length > 0 ? (
+                        filteredSales.map((sale) => (
+                          <TableRow key={sale.id} className={!isBulkMode ? "cursor-pointer" : undefined} onClick={!isBulkMode ? () => handleInvoiceClick(sale) : undefined}>
+                            {isBulkMode && (
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <Checkbox 
+                                  checked={selectedSales.includes(sale.id)}
+                                  onCheckedChange={() => toggleSaleSelection(sale.id)}
+                                  aria-label={`Select sale ${sale.id}`}
+                                />
+                              </TableCell>
+                            )}
+                            <TableCell>{sale.id}</TableCell>
+                            <TableCell>{sale.date}</TableCell>
+                            <TableCell>{sale.customer}</TableCell>
+                            <TableCell>{sale.items?.map((item: any) => item.name).join(', ') || 'None'}</TableCell>
+                            <TableCell className="text-right">Rs. {sale.amount?.toLocaleString() || '0'}</TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                sale.status === 'paid' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : sale.status === 'pending'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {sale.status?.charAt(0).toUpperCase() + sale.status?.slice(1) || 'Unknown'}
+                              </span>
+                            </TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              {!isBulkMode ? (
+                                <Button variant="ghost" size="sm" className="h-8 px-2">
+                                  View <ArrowRight className="h-3 w-3 ml-1" />
+                                </Button>
+                              ) : (
+                                <ActionButtons
+                                  entityType="sale"
+                                  entityId={sale.id}
+                                  entityName={`Sale ${sale.id}`}
+                                  onDelete={() => handleDeleteSale(sale.id)}
+                                  isBulkMode={true}
+                                  isSelected={selectedSales.includes(sale.id)}
+                                  onToggleSelect={() => toggleSaleSelection(sale.id)}
+                                />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
-                            No sales found. Try adjusting your search.
+                          <TableCell colSpan={isBulkMode ? 8 : 7} className="text-center py-8">
+                            {searchTerm ? (
+                              <div>No sales found matching your search.</div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center p-4">
+                                <Receipt className="h-10 w-10 text-muted-foreground mb-2" />
+                                <p className="text-muted-foreground mb-2">No sales found</p>
+                                <Button onClick={() => navigate('/invoicing')}>
+                                  <PlusCircle className="h-4 w-4 mr-2" />
+                                  Create Invoice
+                                </Button>
+                              </div>
+                            )}
                           </TableCell>
                         </TableRow>
                       )}
@@ -394,42 +420,14 @@ const Sales: React.FC = () => {
                   </Table>
                 </div>
                 
-                <div className="flex justify-center mt-4">
-                  <Button variant="outline" onClick={() => navigate('/invoicing')}>
-                    View All Sales <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </div>
-              </Tabs>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Customers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {topCustomers.map((customer, index) => (
-                  <div key={index} className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-medium text-primary">{index + 1}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium truncate">{customer.name}</h4>
-                      <div className="flex items-center text-xs text-muted-foreground mt-1">
-                        <span>{customer.purchases} purchases</span>
-                        <span className="mx-2">•</span>
-                        <span>Rs. {customer.sales.toLocaleString()}</span>
-                      </div>
-                    </div>
-                    <TrendingUp className="h-4 w-4 text-green-500" />
+                {filteredSales.length > 0 && (
+                  <div className="flex justify-center mt-4">
+                    <Button variant="outline" onClick={() => navigate('/invoicing')}>
+                      View All Sales <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
                   </div>
-                ))}
-              </div>
-              
-              <Button variant="link" className="mt-4 p-0 h-auto text-sm">
-                View customer list <ChevronRight className="h-3 w-3 ml-1" />
-              </Button>
+                )}
+              </Tabs>
             </CardContent>
           </Card>
         </div>
@@ -455,11 +453,6 @@ const Sales: React.FC = () => {
                   <SelectValue placeholder="Select customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Kathmandu Retail Store</SelectItem>
-                  <SelectItem value="2">Pokhara Gift Shop</SelectItem>
-                  <SelectItem value="3">Lalitpur Boutique</SelectItem>
-                  <SelectItem value="4">Bhaktapur Fashion</SelectItem>
-                  <SelectItem value="5">Thamel Souvenirs</SelectItem>
                   <SelectItem value="walk-in">Walk-in Customer</SelectItem>
                 </SelectContent>
               </Select>
@@ -527,6 +520,7 @@ const Sales: React.FC = () => {
               customer: 'Walk-in Customer',
               product: 'W-Cut Bags (Small)',
               quantity: 1,
+              price: 50,
               amount: 50,
               paymentMethod: 'cash',
               date: new Date().toISOString().split('T')[0]
@@ -581,39 +575,22 @@ const Sales: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-medium">Customer (Optional)</label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="All Customers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Customers</SelectItem>
-                <SelectItem value="1">Kathmandu Retail Store</SelectItem>
-                <SelectItem value="2">Pokhara Gift Shop</SelectItem>
-                <SelectItem value="3">Lalitpur Boutique</SelectItem>
-                <SelectItem value="4">Bhaktapur Fashion</SelectItem>
-                <SelectItem value="5">Thamel Souvenirs</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
             <label className="text-sm font-medium">Include</label>
             <div className="grid grid-cols-2 gap-2 pt-1">
               <div className="flex items-center space-x-2">
-                <input type="checkbox" id="include-paid" className="rounded border-gray-300" checked />
+                <Checkbox id="include-paid" />
                 <label htmlFor="include-paid" className="text-sm">Paid Invoices</label>
               </div>
               <div className="flex items-center space-x-2">
-                <input type="checkbox" id="include-pending" className="rounded border-gray-300" checked />
+                <Checkbox id="include-pending" />
                 <label htmlFor="include-pending" className="text-sm">Pending Invoices</label>
               </div>
               <div className="flex items-center space-x-2">
-                <input type="checkbox" id="include-draft" className="rounded border-gray-300" />
+                <Checkbox id="include-draft" />
                 <label htmlFor="include-draft" className="text-sm">Draft Invoices</label>
               </div>
               <div className="flex items-center space-x-2">
-                <input type="checkbox" id="include-cancelled" className="rounded border-gray-300" />
+                <Checkbox id="include-cancelled" />
                 <label htmlFor="include-cancelled" className="text-sm">Cancelled Invoices</label>
               </div>
             </div>

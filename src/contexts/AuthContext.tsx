@@ -10,7 +10,9 @@ export type Permission =
   | 'restore_entry' 
   | 'view_history'
   | 'manage_users'
-  | 'manage_roles';
+  | 'manage_roles'
+  | 'bulk_edit'
+  | 'bulk_delete';
 
 export type UserRole = {
   id: string;
@@ -39,7 +41,7 @@ const roles: Record<string, UserRole> = {
   'admin': {
     id: '1',
     name: 'Super Admin',
-    permissions: ['create_entry', 'edit_entry', 'delete_entry', 'restore_entry', 'view_history', 'manage_users', 'manage_roles']
+    permissions: ['create_entry', 'edit_entry', 'delete_entry', 'restore_entry', 'view_history', 'manage_users', 'manage_roles', 'bulk_edit', 'bulk_delete']
   },
   'accountant': {
     id: '2',
