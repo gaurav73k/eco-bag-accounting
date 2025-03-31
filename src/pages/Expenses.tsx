@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -18,7 +17,8 @@ import {
   FileText,
   PieChart,
   Edit,
-  Trash
+  Trash,
+  CheckSquare
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -31,34 +31,17 @@ import { useToast } from '@/hooks/use-toast';
 import { EntryDialog } from '@/components/ui/entry-dialog';
 import ExpenseForm from '@/components/forms/ExpenseForm';
 import { useAuth } from '@/contexts/AuthContext';
-
-const expensesData = [
-  { id: 'EXP-001', date: '2023-06-15', description: 'Purchase of Raw Materials', category: 'Raw Materials', amount: 25000, paymentMethod: 'Bank Transfer' },
-  { id: 'EXP-002', date: '2023-06-14', description: 'Electricity Bill', category: 'Utilities', amount: 5000, paymentMethod: 'Cash' },
-  { id: 'EXP-003', date: '2023-06-14', description: 'Staff Salaries', category: 'Salaries', amount: 45000, paymentMethod: 'Bank Transfer' },
-  { id: 'EXP-004', date: '2023-06-13', description: 'Office Supplies', category: 'Office', amount: 3000, paymentMethod: 'Cash' },
-  { id: 'EXP-005', date: '2023-06-12', description: 'Internet Bill', category: 'Utilities', amount: 2500, paymentMethod: 'Cash' },
-  { id: 'EXP-006', date: '2023-06-12', description: 'Machine Maintenance', category: 'Maintenance', amount: 8000, paymentMethod: 'Cash' },
-  { id: 'EXP-007', date: '2023-06-10', description: 'Transportation', category: 'Transport', amount: 4500, paymentMethod: 'Cash' },
-  { id: 'EXP-008', date: '2023-06-08', description: 'Rent', category: 'Rent', amount: 15000, paymentMethod: 'Bank Transfer' },
-];
-
-const categories = [...new Set(expensesData.map(expense => expense.category))];
-
-const expensesByCategory = categories.map(category => {
-  const total = expensesData
-    .filter(expense => expense.category === category)
-    .reduce((sum, expense) => sum + expense.amount, 0);
-  return { category, amount: total };
-});
+import { Checkbox } from '@/components/ui/checkbox';
 
 const Expenses: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTab, setCurrentTab] = useState('all');
-  const [expenses, setExpenses] = useState(expensesData);
+  const [expenses, setExpenses] = useState([]);
   const [isNewExpenseDialogOpen, setIsNewExpenseDialogOpen] = useState(false);
   const [isEditExpenseDialogOpen, setIsEditExpenseDialogOpen] = useState(false);
   const [currentExpense, setCurrentExpense] = useState<any>(null);
+  const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
+  const [isBulkMode, setIsBulkMode] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const params = useParams();
@@ -66,11 +49,13 @@ const Expenses: React.FC = () => {
 
   const canEdit = hasPermission('edit_entry');
   const canDelete = hasPermission('delete_entry');
+  const canBulkEdit = hasPermission('bulk_edit');
+  const canBulkDelete = hasPermission('bulk_delete');
 
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = 
-      expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.category.toLowerCase().includes(searchTerm.toLowerCase());
+      expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.category?.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (currentTab === 'all') return matchesSearch;
     if (currentTab === 'utilities') return matchesSearch && expense.category === 'Utilities';
@@ -91,11 +76,11 @@ const Expenses: React.FC = () => {
 
   const handleDeleteExpense = (expenseId: string) => {
     const expenseName = expenses.find(e => e.id === expenseId)?.description;
-    if (window.confirm(`Are you sure you want to delete expense: ${expenseName}?`)) {
+    if (window.confirm(`Are you sure you want to delete expense: ${expenseName || expenseId}?`)) {
       setExpenses(prevExpenses => prevExpenses.filter(e => e.id !== expenseId));
       toast({
         title: "Expense Deleted",
-        description: `${expenseName} has been removed.`,
+        description: `${expenseName || 'Expense'} has been removed.`,
       });
     }
   };
@@ -130,6 +115,43 @@ const Expenses: React.FC = () => {
     }
   };
 
+  const handleBulkDelete = () => {
+    if (!selectedExpenses.length) return;
+    
+    if (window.confirm(`Are you sure you want to delete ${selectedExpenses.length} expenses?`)) {
+      setExpenses(prevExpenses => prevExpenses.filter(e => !selectedExpenses.includes(e.id)));
+      setSelectedExpenses([]);
+      toast({
+        title: "Expenses Deleted",
+        description: `${selectedExpenses.length} expenses have been removed.`,
+      });
+      setIsBulkMode(false);
+    }
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedExpenses.length === filteredExpenses.length) {
+      setSelectedExpenses([]);
+    } else {
+      setSelectedExpenses(filteredExpenses.map(expense => expense.id));
+    }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedExpenses(prev => 
+      prev.includes(id) 
+        ? prev.filter(expenseId => expenseId !== id) 
+        : [...prev, id]
+    );
+  };
+
+  const toggleBulkMode = () => {
+    setIsBulkMode(!isBulkMode);
+    if (isBulkMode) {
+      setSelectedExpenses([]);
+    }
+  };
+
   const handleExport = (format: string) => {
     try {
       exportToCSV(
@@ -158,6 +180,15 @@ const Expenses: React.FC = () => {
     }
   };
 
+  const categories = Array.from(new Set(expenses.map(expense => expense.category || '')));
+  
+  const expensesByCategory = categories.map(category => {
+    const total = expenses
+      .filter(expense => expense.category === category)
+      .reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
+    return { category, amount: total };
+  });
+
   return (
     <Layout>
       <div className="animate-fade-in">
@@ -171,6 +202,29 @@ const Expenses: React.FC = () => {
               <PlusCircle className="h-4 w-4 mr-2" />
               New Expense
             </Button>
+            
+            {(canBulkEdit || canBulkDelete) && (
+              <Button 
+                size="sm" 
+                variant={isBulkMode ? "default" : "outline"}
+                onClick={toggleBulkMode}
+              >
+                <CheckSquare className="h-4 w-4 mr-2" />
+                {isBulkMode ? "Exit Bulk Mode" : "Bulk Mode"}
+              </Button>
+            )}
+            
+            {isBulkMode && selectedExpenses.length > 0 && canBulkDelete && (
+              <Button 
+                size="sm" 
+                variant="destructive"
+                onClick={handleBulkDelete}
+              >
+                <Trash className="h-4 w-4 mr-2" />
+                Delete Selected
+              </Button>
+            )}
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -238,7 +292,7 @@ const Expenses: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                Rs. {expenses.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
+                Rs. {expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 From {expenses.length} expenses
@@ -253,10 +307,10 @@ const Expenses: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                Rs. {Math.max(...expenses.map(expense => expense.amount)).toLocaleString()}
+                Rs. {expenses.length ? Math.max(...expenses.map(expense => parseFloat(expense.amount) || 0)).toLocaleString() : '0'}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {expenses.find(expense => expense.amount === Math.max(...expenses.map(expense => expense.amount)))?.category}
+                {expenses.find(expense => parseFloat(expense.amount) === Math.max(...expenses.map(expense => parseFloat(expense.amount) || 0)))?.category || 'N/A'}
               </p>
             </CardContent>
           </Card>
@@ -271,9 +325,9 @@ const Expenses: React.FC = () => {
                 {categories.length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Most significant: {
-                  expensesByCategory.sort((a, b) => b.amount - a.amount)[0].category
-                }
+                {expensesByCategory.length > 0 
+                  ? `Most significant: ${expensesByCategory.sort((a, b) => b.amount - a.amount)[0]?.category || 'N/A'}`
+                  : 'No categories yet'}
               </p>
             </CardContent>
           </Card>
@@ -303,10 +357,19 @@ const Expenses: React.FC = () => {
                         <span>{item.category}</span>
                       </div>
                       <div className="font-medium">
-                        Rs. {item.amount.toLocaleString()} ({Math.round(item.amount / expenses.reduce((sum, expense) => sum + expense.amount, 0) * 100)}%)
+                        Rs. {item.amount.toLocaleString()} 
+                        ({expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0) > 0 
+                          ? Math.round((item.amount / expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0)) * 100) 
+                          : 0}%)
                       </div>
                     </div>
                   ))}
+                  
+                  {expensesByCategory.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No expense data available
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -357,18 +420,34 @@ const Expenses: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        {isBulkMode && (
+                          <TableHead className="w-[50px]">
+                            <Checkbox 
+                              checked={filteredExpenses.length > 0 && selectedExpenses.length === filteredExpenses.length} 
+                              onCheckedChange={handleToggleSelectAll}
+                            />
+                          </TableHead>
+                        )}
                         <TableHead>ID</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Payment Method</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        {!isBulkMode && <TableHead className="text-right">Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredExpenses.map((expense) => (
                         <TableRow key={expense.id}>
+                          {isBulkMode && (
+                            <TableCell>
+                              <Checkbox 
+                                checked={selectedExpenses.includes(expense.id)} 
+                                onCheckedChange={() => handleToggleSelect(expense.id)}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell>{expense.id}</TableCell>
                           <TableCell>{expense.date}</TableCell>
                           <TableCell>{expense.description}</TableCell>
@@ -386,36 +465,38 @@ const Expenses: React.FC = () => {
                               {expense.category}
                             </span>
                           </TableCell>
-                          <TableCell className="text-right font-medium">Rs. {expense.amount.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium">Rs. {parseFloat(expense.amount).toLocaleString()}</TableCell>
                           <TableCell>{expense.paymentMethod}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-2">
-                              {canEdit && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEditExpense(expense)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {canDelete && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteExpense(expense.id)}
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
+                          {!isBulkMode && (
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-2">
+                                {canEdit && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleEditExpense(expense)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {canDelete && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeleteExpense(expense.id)}
+                                  >
+                                    <Trash className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                       {filteredExpenses.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
-                            No expenses found. Try adjusting your search.
+                          <TableCell colSpan={isBulkMode ? 8 : 7} className="text-center py-8">
+                            No expenses found. Try adjusting your search or create a new expense.
                           </TableCell>
                         </TableRow>
                       )}
@@ -429,11 +510,30 @@ const Expenses: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        {isBulkMode && (
+                          <TableHead className="w-[50px]">
+                            <Checkbox 
+                              checked={filteredExpenses.filter(expense => expense.category === 'Utilities').length > 0 && 
+                                      selectedExpenses.filter(id => 
+                                        filteredExpenses.find(e => e.id === id)?.category === 'Utilities'
+                                      ).length === filteredExpenses.filter(expense => expense.category === 'Utilities').length} 
+                              onCheckedChange={() => {
+                                const utilityIds = filteredExpenses.filter(e => e.category === 'Utilities').map(e => e.id);
+                                if (selectedExpenses.filter(id => utilityIds.includes(id)).length === utilityIds.length) {
+                                  setSelectedExpenses(prev => prev.filter(id => !utilityIds.includes(id)));
+                                } else {
+                                  setSelectedExpenses(prev => [...prev, ...utilityIds.filter(id => !prev.includes(id))]);
+                                }
+                              }}
+                            />
+                          </TableHead>
+                        )}
                         <TableHead>ID</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Payment Method</TableHead>
+                        {!isBulkMode && <TableHead className="text-right">Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -441,16 +541,48 @@ const Expenses: React.FC = () => {
                         .filter(expense => expense.category === 'Utilities')
                         .map((expense) => (
                           <TableRow key={expense.id}>
+                            {isBulkMode && (
+                              <TableCell>
+                                <Checkbox 
+                                  checked={selectedExpenses.includes(expense.id)} 
+                                  onCheckedChange={() => handleToggleSelect(expense.id)}
+                                />
+                              </TableCell>
+                            )}
                             <TableCell>{expense.id}</TableCell>
                             <TableCell>{expense.date}</TableCell>
                             <TableCell>{expense.description}</TableCell>
-                            <TableCell className="text-right font-medium">Rs. {expense.amount.toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-medium">Rs. {parseFloat(expense.amount).toLocaleString()}</TableCell>
                             <TableCell>{expense.paymentMethod}</TableCell>
+                            {!isBulkMode && (
+                              <TableCell className="text-right">
+                                <div className="flex justify-end space-x-2">
+                                  {canEdit && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleEditExpense(expense)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {canDelete && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleDeleteExpense(expense.id)}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                       {filteredExpenses.filter(expense => expense.category === 'Utilities').length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8">
+                          <TableCell colSpan={isBulkMode ? 7 : 6} className="text-center py-8">
                             No utility expenses found.
                           </TableCell>
                         </TableRow>
@@ -465,11 +597,17 @@ const Expenses: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        {isBulkMode && (
+                          <TableHead className="w-[50px]">
+                            <Checkbox />
+                          </TableHead>
+                        )}
                         <TableHead>ID</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Payment Method</TableHead>
+                        {!isBulkMode && <TableHead className="text-right">Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -477,16 +615,48 @@ const Expenses: React.FC = () => {
                         .filter(expense => expense.category === 'Raw Materials')
                         .map((expense) => (
                           <TableRow key={expense.id}>
+                            {isBulkMode && (
+                              <TableCell>
+                                <Checkbox 
+                                  checked={selectedExpenses.includes(expense.id)} 
+                                  onCheckedChange={() => handleToggleSelect(expense.id)}
+                                />
+                              </TableCell>
+                            )}
                             <TableCell>{expense.id}</TableCell>
                             <TableCell>{expense.date}</TableCell>
                             <TableCell>{expense.description}</TableCell>
-                            <TableCell className="text-right font-medium">Rs. {expense.amount.toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-medium">Rs. {parseFloat(expense.amount).toLocaleString()}</TableCell>
                             <TableCell>{expense.paymentMethod}</TableCell>
+                            {!isBulkMode && (
+                              <TableCell className="text-right">
+                                <div className="flex justify-end space-x-2">
+                                  {canEdit && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleEditExpense(expense)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {canDelete && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleDeleteExpense(expense.id)}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                       {filteredExpenses.filter(expense => expense.category === 'Raw Materials').length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8">
+                          <TableCell colSpan={isBulkMode ? 7 : 6} className="text-center py-8">
                             No raw material expenses found.
                           </TableCell>
                         </TableRow>
@@ -501,11 +671,17 @@ const Expenses: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        {isBulkMode && (
+                          <TableHead className="w-[50px]">
+                            <Checkbox />
+                          </TableHead>
+                        )}
                         <TableHead>ID</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Payment Method</TableHead>
+                        {!isBulkMode && <TableHead className="text-right">Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -513,16 +689,48 @@ const Expenses: React.FC = () => {
                         .filter(expense => expense.category === 'Salaries')
                         .map((expense) => (
                           <TableRow key={expense.id}>
+                            {isBulkMode && (
+                              <TableCell>
+                                <Checkbox 
+                                  checked={selectedExpenses.includes(expense.id)} 
+                                  onCheckedChange={() => handleToggleSelect(expense.id)}
+                                />
+                              </TableCell>
+                            )}
                             <TableCell>{expense.id}</TableCell>
                             <TableCell>{expense.date}</TableCell>
                             <TableCell>{expense.description}</TableCell>
-                            <TableCell className="text-right font-medium">Rs. {expense.amount.toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-medium">Rs. {parseFloat(expense.amount).toLocaleString()}</TableCell>
                             <TableCell>{expense.paymentMethod}</TableCell>
+                            {!isBulkMode && (
+                              <TableCell className="text-right">
+                                <div className="flex justify-end space-x-2">
+                                  {canEdit && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleEditExpense(expense)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {canDelete && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleDeleteExpense(expense.id)}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                       {filteredExpenses.filter(expense => expense.category === 'Salaries').length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8">
+                          <TableCell colSpan={isBulkMode ? 7 : 6} className="text-center py-8">
                             No salary expenses found.
                           </TableCell>
                         </TableRow>

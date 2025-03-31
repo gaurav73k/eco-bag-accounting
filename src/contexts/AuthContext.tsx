@@ -11,8 +11,11 @@ export type Permission =
   | 'view_history'
   | 'manage_users'
   | 'manage_roles'
+  | 'manage_fiscal_year'
   | 'bulk_edit'
-  | 'bulk_delete';
+  | 'bulk_delete'
+  | 'print_invoice'
+  | 'download_invoice';
 
 export type UserRole = {
   id: string;
@@ -41,17 +44,30 @@ const roles: Record<string, UserRole> = {
   'admin': {
     id: '1',
     name: 'Super Admin',
-    permissions: ['create_entry', 'edit_entry', 'delete_entry', 'restore_entry', 'view_history', 'manage_users', 'manage_roles', 'bulk_edit', 'bulk_delete']
+    permissions: [
+      'create_entry', 
+      'edit_entry', 
+      'delete_entry', 
+      'restore_entry', 
+      'view_history', 
+      'manage_users', 
+      'manage_roles', 
+      'manage_fiscal_year',
+      'bulk_edit', 
+      'bulk_delete',
+      'print_invoice',
+      'download_invoice'
+    ]
   },
   'accountant': {
     id: '2',
     name: 'Accountant',
-    permissions: ['create_entry', 'edit_entry', 'view_history']
+    permissions: ['create_entry', 'edit_entry', 'view_history', 'print_invoice', 'download_invoice']
   },
   'manager': {
     id: '3',
     name: 'Manager',
-    permissions: ['create_entry', 'edit_entry', 'view_history']
+    permissions: ['create_entry', 'edit_entry', 'view_history', 'print_invoice']
   },
   'viewer': {
     id: '4',
