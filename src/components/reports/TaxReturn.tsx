@@ -9,20 +9,13 @@ import { printReport, downloadReport } from '@/utils/reportUtils';
 const TaxReturn = () => {
   const { fiscalYear } = useFiscalYear();
 
-  // Sample tax data
+  // Empty tax data structure
   const taxData = {
-    taxableIncome: 249000,
-    corporateTaxRate: 0.25,
-    corporateTaxAmount: 62250,
-    deductions: [
-      { name: 'Charitable Contributions', amount: 5000 },
-      { name: 'Capital Allowances', amount: 12500 },
-      { name: 'R&D Expenses', amount: 7500 },
-    ],
-    adjustments: [
-      { name: 'Disallowed Expenses', amount: 8500 },
-      { name: 'Prior Year Adjustments', amount: -3500 },
-    ]
+    taxableIncome: 0,
+    corporateTaxRate: 0,
+    corporateTaxAmount: 0,
+    deductions: [],
+    adjustments: []
   };
 
   // Handle print and download
@@ -61,48 +54,62 @@ const TaxReturn = () => {
         <h3 className="text-xl font-semibold">Tax Return Summary</h3>
         <p className="text-muted-foreground">Fiscal Year {fiscalYear}</p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <div className="space-y-4">
-            <div className="flex justify-between p-4 bg-muted/50 rounded-md">
-              <span>Taxable Income:</span>
-              <span className="font-medium">{taxData.taxableIncome.toLocaleString()} NPR</span>
-            </div>
-            <div className="flex justify-between p-4 bg-muted/50 rounded-md">
-              <span>Corporate Tax Rate:</span>
-              <span className="font-medium">{(taxData.corporateTaxRate * 100).toFixed(1)}%</span>
-            </div>
-            <div className="flex justify-between p-4 bg-primary/10 rounded-md font-semibold">
-              <span>Corporate Tax Due:</span>
-              <span>{taxData.corporateTaxAmount.toLocaleString()} NPR</span>
-            </div>
+        {taxData.taxableIncome === 0 ? (
+          <div className="p-8 text-center bg-muted/30 rounded-md">
+            <p className="text-muted-foreground">No tax data available. Please record income and expenses first.</p>
           </div>
-          
-          <div className="space-y-4">
-            <h4 className="text-lg font-medium">Tax Deductions & Adjustments</h4>
-            
-            <div className="space-y-2">
-              <h5 className="text-sm font-medium text-muted-foreground">Deductions</h5>
-              {taxData.deductions.map((item, i) => (
-                <div key={i} className="flex justify-between p-2 border-b">
-                  <span>{item.name}:</span>
-                  <span>{item.amount.toLocaleString()} NPR</span>
-                </div>
-              ))}
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div className="space-y-4">
+              <div className="flex justify-between p-4 bg-muted/50 rounded-md">
+                <span>Taxable Income:</span>
+                <span className="font-medium">{taxData.taxableIncome.toLocaleString()} NPR</span>
+              </div>
+              <div className="flex justify-between p-4 bg-muted/50 rounded-md">
+                <span>Corporate Tax Rate:</span>
+                <span className="font-medium">{(taxData.corporateTaxRate * 100).toFixed(1)}%</span>
+              </div>
+              <div className="flex justify-between p-4 bg-primary/10 rounded-md font-semibold">
+                <span>Corporate Tax Due:</span>
+                <span>{taxData.corporateTaxAmount.toLocaleString()} NPR</span>
+              </div>
             </div>
             
-            <div className="space-y-2">
-              <h5 className="text-sm font-medium text-muted-foreground">Adjustments</h5>
-              {taxData.adjustments.map((item, i) => (
-                <div key={i} className="flex justify-between p-2 border-b">
-                  <span>{item.name}:</span>
-                  <span 
-                    className={item.amount < 0 ? "text-red-600" : undefined}
-                  >{item.amount.toLocaleString()} NPR</span>
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium">Tax Deductions & Adjustments</h4>
+              
+              {taxData.deductions.length > 0 ? (
+                <div className="space-y-2">
+                  <h5 className="text-sm font-medium text-muted-foreground">Deductions</h5>
+                  {taxData.deductions.map((item, i) => (
+                    <div key={i} className="flex justify-between p-2 border-b">
+                      <span>{item.name}:</span>
+                      <span>{item.amount.toLocaleString()} NPR</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="text-sm text-muted-foreground p-2">No deductions recorded</div>
+              )}
+              
+              {taxData.adjustments.length > 0 ? (
+                <div className="space-y-2">
+                  <h5 className="text-sm font-medium text-muted-foreground">Adjustments</h5>
+                  {taxData.adjustments.map((item, i) => (
+                    <div key={i} className="flex justify-between p-2 border-b">
+                      <span>{item.name}:</span>
+                      <span 
+                        className={item.amount < 0 ? "text-red-600" : undefined}
+                      >{item.amount.toLocaleString()} NPR</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground p-2">No adjustments recorded</div>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </ReportTemplate>
   );

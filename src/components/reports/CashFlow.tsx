@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { ChartContainer } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { FileText, Download, Printer, BarChart as BarChart4 } from 'lucide-react';
 import { getCashFlowData, monthlyData } from '@/utils/reportData';
 import { printReport, downloadReport } from '@/utils/reportUtils';
@@ -22,6 +22,16 @@ const CashFlow = () => {
   const investingTotal = cashFlowData.investing.reduce((total, item) => total + item.amount, 0);
   const financingTotal = cashFlowData.financing.reduce((total, item) => total + item.amount, 0);
   const netCashFlow = operatingTotal + investingTotal + financingTotal;
+
+  // Check if we have any data
+  const hasData = cashFlowData.operating.length > 0 || 
+                  cashFlowData.investing.length > 0 || 
+                  cashFlowData.financing.length > 0;
+
+  // Check if monthly data has any activity
+  const hasMonthlyData = monthlyData.some(month => 
+    month.operating !== 0 || month.investing !== 0 || month.financing !== 0 || month.net !== 0
+  );
 
   // Handle print and download
   const handlePrint = () => {
@@ -71,7 +81,23 @@ const CashFlow = () => {
         </div>
       </div>
       
-      {viewType === 'table' ? (
+      {!hasData && !hasMonthlyData ? (
+        <div className="p-8 text-center bg-muted/30 rounded-md">
+          <p className="text-muted-foreground">No cash flow data available. Please record cash transactions first.</p>
+        </div>
+      ) : viewType === 'table' && !hasData ? (
+        <div className="p-8 text-center bg-muted/30 rounded-md">
+          <p className="text-muted-foreground">No cash flow statement data available. Please record cash transactions first.</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setViewType('chart')} 
+            className="mt-4"
+          >
+            View Monthly Chart Instead
+          </Button>
+        </div>
+      ) : viewType === 'table' ? (
         <>
           <Card>
             <CardHeader>
@@ -87,14 +113,22 @@ const CashFlow = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {cashFlowData.operating.map((item, idx) => (
-                    <TableRow key={`operating-${idx}`} className={item.isSubtotal ? "font-medium" : ""}>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {item.amount.toLocaleString()}
+                  {cashFlowData.operating.length > 0 ? (
+                    cashFlowData.operating.map((item, idx) => (
+                      <TableRow key={`operating-${idx}`} className={item.isSubtotal ? "font-medium" : ""}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {item.amount.toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        No operating activities recorded
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -118,14 +152,22 @@ const CashFlow = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {cashFlowData.investing.map((item, idx) => (
-                    <TableRow key={`investing-${idx}`} className={item.isSubtotal ? "font-medium" : ""}>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {item.amount.toLocaleString()}
+                  {cashFlowData.investing.length > 0 ? (
+                    cashFlowData.investing.map((item, idx) => (
+                      <TableRow key={`investing-${idx}`} className={item.isSubtotal ? "font-medium" : ""}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {item.amount.toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        No investing activities recorded
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -149,14 +191,22 @@ const CashFlow = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {cashFlowData.financing.map((item, idx) => (
-                    <TableRow key={`financing-${idx}`} className={item.isSubtotal ? "font-medium" : ""}>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {item.amount.toLocaleString()}
+                  {cashFlowData.financing.length > 0 ? (
+                    cashFlowData.financing.map((item, idx) => (
+                      <TableRow key={`financing-${idx}`} className={item.isSubtotal ? "font-medium" : ""}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {item.amount.toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        No financing activities recorded
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -179,81 +229,89 @@ const CashFlow = () => {
         </>
       ) : (
         <Card className="p-4">
-          <CardHeader>
-            <CardTitle>Monthly Cash Flow Trends</CardTitle>
-            <CardDescription>Cash flow analysis throughout the year</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={{
-                operating: { 
-                  label: "Operating",
-                  theme: {
-                    light: "#10B981", 
-                    dark: "#34D399"
-                  }
-                },
-                investing: {
-                  label: "Investing",
-                  theme: {
-                    light: "#EF4444",
-                    dark: "#F87171"
-                  }
-                },
-                financing: {
-                  label: "Financing",
-                  theme: {
-                    light: "#F59E0B",
-                    dark: "#FBBF24"
-                  }
-                },
-                net: {
-                  label: "Net Cash Flow",
-                  theme: {
-                    light: "#4F46E5",
-                    dark: "#818CF8"
-                  }
-                }
-              }}
-              className="w-full h-[400px]"
-            >
-              <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="operating" 
-                  stroke="var(--color-operating)" 
-                  strokeWidth={2}
-                  name="Operating Activities"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="investing" 
-                  stroke="var(--color-investing)" 
-                  strokeWidth={2}
-                  name="Investing Activities"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="financing" 
-                  stroke="var(--color-financing)" 
-                  strokeWidth={2}
-                  name="Financing Activities"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="net" 
-                  stroke="var(--color-net)" 
-                  strokeWidth={3}
-                  name="Net Cash Flow"
-                />
-              </LineChart>
-            </ChartContainer>
-          </CardContent>
+          {hasMonthlyData ? (
+            <>
+              <CardHeader>
+                <CardTitle>Monthly Cash Flow Trends</CardTitle>
+                <CardDescription>Cash flow analysis throughout the year</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer
+                  config={{
+                    operating: { 
+                      label: "Operating",
+                      theme: {
+                        light: "#10B981", 
+                        dark: "#34D399"
+                      }
+                    },
+                    investing: {
+                      label: "Investing",
+                      theme: {
+                        light: "#EF4444",
+                        dark: "#F87171"
+                      }
+                    },
+                    financing: {
+                      label: "Financing",
+                      theme: {
+                        light: "#F59E0B",
+                        dark: "#FBBF24"
+                      }
+                    },
+                    net: {
+                      label: "Net Cash Flow",
+                      theme: {
+                        light: "#4F46E5",
+                        dark: "#818CF8"
+                      }
+                    }
+                  }}
+                  className="w-full h-[400px]"
+                >
+                  <LineChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="operating" 
+                      stroke="var(--color-operating)" 
+                      strokeWidth={2}
+                      name="Operating Activities"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="investing" 
+                      stroke="var(--color-investing)" 
+                      strokeWidth={2}
+                      name="Investing Activities"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="financing" 
+                      stroke="var(--color-financing)" 
+                      strokeWidth={2}
+                      name="Financing Activities"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="net" 
+                      stroke="var(--color-net)" 
+                      strokeWidth={3}
+                      name="Net Cash Flow"
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </CardContent>
+            </>
+          ) : (
+            <div className="p-8 text-center bg-muted/30 rounded-md">
+              <p className="text-muted-foreground">No cash flow data available. Please record cash transactions first.</p>
+            </div>
+          )}
         </Card>
       )}
     </div>

@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { ChartContainer } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { FileText, Download, Printer, LineChart } from 'lucide-react';
 import { getProfitLossData } from '@/utils/reportData';
 import { printReport, downloadReport } from '@/utils/reportUtils';
@@ -21,6 +21,9 @@ const ProfitLoss = () => {
   const totalRevenue = profitLossData.revenue.reduce((total, item) => total + item.amount, 0);
   const totalExpenses = profitLossData.expenses.reduce((total, item) => total + item.amount, 0);
   const netIncome = totalRevenue - totalExpenses;
+
+  // Check if we have any data
+  const hasData = profitLossData.revenue.length > 0 || profitLossData.expenses.length > 0;
 
   // Prepare chart data
   const chartData = [
@@ -77,7 +80,11 @@ const ProfitLoss = () => {
         </div>
       </div>
       
-      {viewType === 'table' ? (
+      {!hasData ? (
+        <div className="p-8 text-center bg-muted/30 rounded-md">
+          <p className="text-muted-foreground">No profit & loss data available. Please record revenue and expense transactions first.</p>
+        </div>
+      ) : viewType === 'table' ? (
         <>
           <Card className="mb-6">
             <CardHeader>
@@ -93,14 +100,22 @@ const ProfitLoss = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {profitLossData.revenue.map((item, idx) => (
-                    <TableRow key={`revenue-${idx}`}>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {item.amount.toLocaleString()}
+                  {profitLossData.revenue.length > 0 ? (
+                    profitLossData.revenue.map((item, idx) => (
+                      <TableRow key={`revenue-${idx}`}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {item.amount.toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        No revenue entries recorded
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -124,14 +139,22 @@ const ProfitLoss = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {profitLossData.expenses.map((item, idx) => (
-                    <TableRow key={`expense-${idx}`}>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {item.amount.toLocaleString()}
+                  {profitLossData.expenses.length > 0 ? (
+                    profitLossData.expenses.map((item, idx) => (
+                      <TableRow key={`expense-${idx}`}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell className="text-right font-mono">
+                          {item.amount.toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        No expense entries recorded
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

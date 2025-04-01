@@ -32,7 +32,7 @@ const TrialBalance = () => {
     printReport({
       title: "Trial Balance",
       data: filteredAccounts,
-      fiscalYear
+      fiscalYear: fiscalYear
     });
   };
 
@@ -40,7 +40,7 @@ const TrialBalance = () => {
     downloadReport({
       title: "Trial Balance",
       data: filteredAccounts,
-      fiscalYear
+      fiscalYear: fiscalYear
     });
   };
 
@@ -70,50 +70,58 @@ const TrialBalance = () => {
           </div>
         </div>
         
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[10%]">Account Code</TableHead>
-              <TableHead className="w-[45%]">Account Name</TableHead>
-              <TableHead className="text-right">Debit (NPR)</TableHead>
-              <TableHead className="text-right">Credit (NPR)</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredAccounts.map((account) => (
-              <TableRow key={account.code}>
-                <TableCell>{account.code}</TableCell>
-                <TableCell>{account.name}</TableCell>
-                <TableCell className="text-right font-mono">
-                  {account.debit > 0 ? account.debit.toLocaleString() : ''}
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {account.credit > 0 ? account.credit.toLocaleString() : ''}
-                </TableCell>
-              </TableRow>
-            ))}
+        {accounts.length === 0 ? (
+          <div className="p-8 text-center bg-muted/30 rounded-md">
+            <p className="text-muted-foreground">No accounts available. Please add accounts and record transactions first.</p>
+          </div>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[10%]">Account Code</TableHead>
+                  <TableHead className="w-[45%]">Account Name</TableHead>
+                  <TableHead className="text-right">Debit (NPR)</TableHead>
+                  <TableHead className="text-right">Credit (NPR)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAccounts.map((account) => (
+                  <TableRow key={account.code}>
+                    <TableCell>{account.code}</TableCell>
+                    <TableCell>{account.name}</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {account.debit > 0 ? account.debit.toLocaleString() : ''}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {account.credit > 0 ? account.credit.toLocaleString() : ''}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                
+                {/* Totals Row */}
+                <TableRow className="font-bold border-t-2">
+                  <TableCell colSpan={2}>Total</TableCell>
+                  <TableCell className="text-right font-mono font-bold">
+                    {totalDebit.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right font-mono font-bold">
+                    {totalCredit.toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
             
-            {/* Totals Row */}
-            <TableRow className="font-bold border-t-2">
-              <TableCell colSpan={2}>Total</TableCell>
-              <TableCell className="text-right font-mono font-bold">
-                {totalDebit.toLocaleString()}
-              </TableCell>
-              <TableCell className="text-right font-mono font-bold">
-                {totalCredit.toLocaleString()}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-        
-        {/* Balance status */}
-        <div className={`p-4 rounded-lg ${isBalanced ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300'}`}>
-          <p className="font-medium">
-            {isBalanced 
-              ? '✓ The trial balance is balanced. Debit equals credit.' 
-              : '✗ The trial balance is not balanced. Please check your entries.'}
-          </p>
-        </div>
+            {/* Balance status */}
+            <div className={`p-4 rounded-lg ${isBalanced ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300'}`}>
+              <p className="font-medium">
+                {isBalanced 
+                  ? '✓ The trial balance is balanced. Debit equals credit.' 
+                  : '✗ The trial balance is not balanced. Please check your entries.'}
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </ReportTemplate>
   );

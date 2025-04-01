@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { ChartContainer } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { FileText, Download, Printer, BarChart as BarChart4 } from 'lucide-react';
 import { getBalanceSheetData } from '@/utils/reportData';
 import { printReport, downloadReport } from '@/utils/reportUtils';
@@ -27,6 +27,9 @@ const BalanceSheet = () => {
   
   const totalAssets = calculateTotal(balanceSheetData.assets);
   const totalLiabilitiesAndEquity = calculateTotal(balanceSheetData.liabilitiesAndEquity);
+
+  // Check if we have any data
+  const hasData = totalAssets > 0 || totalLiabilitiesAndEquity > 0;
 
   // Prepare chart data
   const chartData = [
@@ -82,7 +85,11 @@ const BalanceSheet = () => {
         </div>
       </div>
       
-      {viewType === 'table' ? (
+      {!hasData ? (
+        <div className="p-8 text-center bg-muted/30 rounded-md">
+          <p className="text-muted-foreground">No balance sheet data available. Please record assets, liabilities, and equity entries first.</p>
+        </div>
+      ) : viewType === 'table' ? (
         <>
           <Card>
             <CardHeader>
