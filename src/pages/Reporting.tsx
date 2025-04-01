@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,7 +6,7 @@ import Layout from '@/components/Layout';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, BarChart4, CreditCard, LineChart, FileSpreadsheet, Calculator, FileCog } from 'lucide-react';
+import { FileText, BarChart, CreditCard, LineChart, FileSpreadsheet, Calculator, FileCog } from 'lucide-react';
 import { DialogForm } from '@/components/ui/dialog-form';
 
 // Import report components
@@ -44,7 +43,7 @@ const Reporting = () => {
 
   return (
     <Layout>
-      <PageTitle title="Reporting & Analysis" subtitle={`Financial Reports for Fiscal Year ${fiscalYear}`} />
+      <PageTitle title="Reporting & Analysis" description={`Financial Reports for Fiscal Year ${fiscalYear}`} />
       
       <Tabs 
         value={activeTab}
@@ -71,7 +70,7 @@ const Reporting = () => {
             />
             <ReportCard 
               title="Profit & Loss" 
-              icon={<BarChart4 />} 
+              icon={<BarChart />} 
               description="Income statement" 
               onClick={() => navigate('/reporting/profit-loss')}
             />
@@ -143,13 +142,13 @@ const Reporting = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <ReportCard 
               title="Aged Receivables" 
-              icon={<BarChart4 />} 
+              icon={<BarChart />} 
               description="Outstanding customer payments" 
               onClick={() => navigate('/reporting/aged-receivables')}
             />
             <ReportCard 
               title="Aged Payables" 
-              icon={<BarChart4 />} 
+              icon={<BarChart />} 
               description="Outstanding vendor payments" 
               onClick={() => navigate('/reporting/aged-payables')}
             />
@@ -173,7 +172,7 @@ const Reporting = () => {
             />
             <ReportCard 
               title="Analytic Items" 
-              icon={<BarChart4 />} 
+              icon={<BarChart />} 
               description="Business performance analytics" 
               onClick={() => navigate('/reporting/analytic-items')}
             />

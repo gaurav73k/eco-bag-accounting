@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { ChartContainer } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { FileText, Download, Printer } from 'lucide-react';
+import { FileText, Download, Printer, BarChart as BarChart4 } from 'lucide-react';
 
 const CashFlow = () => {
   const { fiscalYear } = useFiscalYear();
