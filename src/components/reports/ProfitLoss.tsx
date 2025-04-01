@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -32,20 +31,20 @@ const ProfitLoss = () => {
     { name: 'Net Income', value: netIncome },
   ];
 
-  // Handle print and download
+  // Handle print and download - wrap object in an array to match expected type
   const handlePrint = () => {
     printReport({
       title: "Profit & Loss Statement",
-      data: profitLossData,
-      fiscalYear
+      data: [profitLossData], // Wrap in array to match expected type
+      fiscalYear: Number(fiscalYear) // Convert to number
     });
   };
 
   const handleDownload = () => {
     downloadReport({
       title: "Profit & Loss Statement",
-      data: profitLossData,
-      fiscalYear
+      data: [profitLossData], // Wrap in array to match expected type
+      fiscalYear: Number(fiscalYear) // Convert to number
     });
   };
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -33,20 +32,20 @@ const CashFlow = () => {
     month.operating !== 0 || month.investing !== 0 || month.financing !== 0 || month.net !== 0
   );
 
-  // Handle print and download
+  // Handle print and download - wrap object in an array to match expected type
   const handlePrint = () => {
     printReport({
       title: "Cash Flow Statement",
-      data: cashFlowData,
-      fiscalYear
+      data: [cashFlowData], // Wrap in array to match expected type
+      fiscalYear: Number(fiscalYear) // Convert to number
     });
   };
 
   const handleDownload = () => {
     downloadReport({
       title: "Cash Flow Statement",
-      data: cashFlowData,
-      fiscalYear
+      data: [cashFlowData], // Wrap in array to match expected type
+      fiscalYear: Number(fiscalYear) // Convert to number
     });
   };
 

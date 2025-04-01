@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReportTemplate from './ReportTemplate';
 import { Button } from '@/components/ui/button';
@@ -18,20 +17,20 @@ const TaxReturn = () => {
     adjustments: []
   };
 
-  // Handle print and download
+  // Handle print and download - wrap object in an array to match expected type
   const handlePrint = () => {
     printReport({
       title: "Tax Return",
-      data: taxData,
-      fiscalYear
+      data: [taxData], // Wrap in array to match expected type
+      fiscalYear: Number(fiscalYear) // Convert to number
     });
   };
 
   const handleDownload = () => {
     downloadReport({
       title: "Tax Return",
-      data: taxData,
-      fiscalYear
+      data: [taxData], // Wrap in array to match expected type
+      fiscalYear: Number(fiscalYear) // Convert to number
     });
   };
 

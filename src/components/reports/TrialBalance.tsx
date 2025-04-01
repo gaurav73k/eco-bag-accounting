@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ReportTemplate from './ReportTemplate';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -27,12 +26,12 @@ const TrialBalance = () => {
   const totalCredit = filteredAccounts.reduce((sum, account) => sum + account.credit, 0);
   const isBalanced = totalDebit === totalCredit;
 
-  // Handle print and download
+  // Handle print and download - convert fiscalYear to number
   const handlePrint = () => {
     printReport({
       title: "Trial Balance",
       data: filteredAccounts,
-      fiscalYear: fiscalYear
+      fiscalYear: Number(fiscalYear) // Convert to number
     });
   };
 
@@ -40,7 +39,7 @@ const TrialBalance = () => {
     downloadReport({
       title: "Trial Balance",
       data: filteredAccounts,
-      fiscalYear: fiscalYear
+      fiscalYear: Number(fiscalYear) // Convert to number
     });
   };
 

@@ -10,6 +10,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const createMockClient = () => {
   console.warn('No Supabase credentials found. Using mock client.');
   
+  // Return a mock client with the same structure as the real client
   return {
     auth: {
       getSession: async () => ({ data: { session: null }, error: null }),
@@ -62,7 +63,7 @@ const createMockClient = () => {
 // Use mock client if credentials aren't available
 export const supabase = supabaseUrl && supabaseAnonKey
   ? createSupabaseClient(supabaseUrl, supabaseAnonKey)
-  : createMockClient() as ReturnType<typeof createSupabaseClient>;
+  : createMockClient() as unknown as ReturnType<typeof createSupabaseClient>; // Use unknown casting to avoid type conflicts
 
 // Re-export for convenience
 export type { Session, User } from '@supabase/supabase-js';
