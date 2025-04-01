@@ -2,10 +2,10 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { FiscalYearProvider } from "./contexts/FiscalYearContext";
+import { SettingsProvider } from "./contexts/SettingsContext";
 
 import Index from "./pages/Index";
 import DayBook from "./pages/DayBook";
@@ -20,17 +20,10 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Invoicing from "./pages/Invoicing";
 import AccountSettings from "./pages/AccountSettings";
+import SiteSettings from "./pages/SiteSettings";
+import ResetPassword from "./pages/ResetPassword";
 import RoleManagement from "./components/RoleManagement";
-import Reporting from "./pages/Reporting"; // Add this import
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import Reporting from "./pages/Reporting";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -63,6 +56,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/daybook" element={<ProtectedRoute><DayBook /></ProtectedRoute>} />
       <Route path="/stock" element={<ProtectedRoute><StockManagement /></ProtectedRoute>} />
@@ -87,10 +81,14 @@ const AppRoutes = () => {
       <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
       <Route path="/expenses/new" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
       <Route path="/expenses/edit/:id" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
-      {/* New Reporting Routes */}
       <Route path="/reporting" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
       <Route path="/reporting/:reportType" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
+      <Route path="/site-settings" element={
+        <AdminRoute requiredPermission="manage_users">
+          <SiteSettings />
+        </AdminRoute>
+      } />
       <Route path="/user-management" element={
         <AdminRoute requiredPermission="manage_users">
           <RoleManagement />
@@ -103,17 +101,17 @@ const AppRoutes = () => {
 
 // Main App component
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <FiscalYearProvider>
+  <TooltipProvider>
+    <Toaster />
+    <Sonner />
+    <AuthProvider>
+      <FiscalYearProvider>
+        <SettingsProvider>
           <AppRoutes />
-        </FiscalYearProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+        </SettingsProvider>
+      </FiscalYearProvider>
+    </AuthProvider>
+  </TooltipProvider>
 );
 
 export default App;

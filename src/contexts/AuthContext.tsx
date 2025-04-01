@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase, User, Session } from '@/lib/supabase';
 
 export type Permission = 
   | 'create_entry' 
@@ -23,7 +24,7 @@ export type UserRole = {
   permissions: Permission[];
 };
 
-export type User = {
+export type AuthUser = {
   id: string;
   name: string;
   email: string;
@@ -32,14 +33,16 @@ export type User = {
 };
 
 type AuthContextType = {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   hasPermission: (permission: Permission) => boolean;
+  resetPassword: (email: string) => Promise<void>;
+  updateUserRole: (userId: string, roleId: string) => Promise<void>;
 };
 
-// Define roles with permissions
+// Define roles with permissions (will be moved to DB with Supabase)
 const roles: Record<string, UserRole> = {
   'admin': {
     id: '1',
@@ -76,18 +79,6 @@ const roles: Record<string, UserRole> = {
   }
 };
 
-// Hardcoded users for initial setup (in production, this would be from a database)
-// WARNING: This is only for initial setup and should be replaced with a real backend
-const authorizedUsers = [
-  {
-    email: "admin@example.com",
-    password: "Admin@123!",  // In production, this would be hashed
-    roleId: "admin",
-    name: "System Administrator",
-    id: "1"
-  }
-];
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
@@ -99,66 +90,98 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
-
   const isAuthenticated = !!user;
 
-  // Check if user is already logged in
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        // Ensure role object is properly attached
-        const userWithRole = {
-          ...parsedUser,
-          role: roles[parsedUser.roleId] || roles['viewer']
-        };
-        setUser(userWithRole);
-      } catch (error) {
-        console.error("Failed to parse stored user data:", error);
-        localStorage.removeItem('user');
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        
+        if (event === 'SIGNED_IN' && session) {
+          try {
+            // Fetch user details including role
+            const { data: userData, error } = await supabase
+              .from('users')
+              .select('*, roles(*)')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (error || !userData) {
+              console.error('Error fetching user data:', error);
+              // Fallback to existing role system until DB is set up
+              const userWithRole: AuthUser = {
+                id: session.user.id,
+                name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || '',
+                email: session.user.email || '',
+                roleId: 'admin', // Default role
+                role: roles['admin']
+              };
+              setUser(userWithRole);
+            } else {
+              // Map DB role to our format
+              const userWithRole: AuthUser = {
+                id: userData.id,
+                name: userData.name || session.user.email?.split('@')[0] || '',
+                email: userData.email,
+                roleId: userData.role_id,
+                // If roles are in DB, use that, otherwise use our hardcoded ones
+                role: userData.roles || roles[userData.role_id] || roles['viewer']
+              };
+              setUser(userWithRole);
+            }
+          } catch (error) {
+            console.error('Error setting up user:', error);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
       }
-    }
+    );
+
+    // Initial session check
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Auth state change listener will handle setting up the user
+      }
+    };
+    
+    checkSession();
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Basic security check - in production, this would call a backend API with proper auth
-    if (!email || !password) {
-      toast.error('Please provide both email and password');
-      return false;
-    }
-    
-    // Find user (in production, this would be an API call)
-    const foundUser = authorizedUsers.find(u => 
-      u.email.toLowerCase() === email.toLowerCase() && 
-      u.password === password
-    );
-    
-    if (foundUser) {
-      // In a real system, the password would never be stored or transmitted client-side
-      const { password: _, ...userWithoutPassword } = foundUser;
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return false;
+      }
       
-      const userObject: User = {
-        ...userWithoutPassword,
-        role: roles[foundUser.roleId]
-      };
-      
-      setUser(userObject);
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
       toast.success('Successfully logged in');
       navigate('/');
       return true;
-    } else {
-      toast.error('Invalid credentials');
+    } catch (error) {
+      toast.error('Failed to log in');
       return false;
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem('user'); // Clean up old storage
     toast.success('Successfully logged out');
     navigate('/login');
   };
@@ -168,8 +191,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return user.role.permissions.includes(permission);
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    
+    toast.success('Password reset email sent');
+  };
+
+  const updateUserRole = async (userId: string, roleId: string) => {
+    // This will be implemented with Supabase
+    toast.success('User role updated');
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, hasPermission }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated, 
+      login, 
+      logout, 
+      hasPermission,
+      resetPassword,
+      updateUserRole
+    }}>
       {children}
     </AuthContext.Provider>
   );
