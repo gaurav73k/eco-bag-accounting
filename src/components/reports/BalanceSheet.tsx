@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -6,45 +7,15 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FileText, Download, Printer, BarChart as BarChart4 } from 'lucide-react';
+import { getBalanceSheetData } from '@/utils/reportData';
+import { printReport, downloadReport } from '@/utils/reportUtils';
 
 const BalanceSheet = () => {
   const { fiscalYear } = useFiscalYear();
   const [viewType, setViewType] = useState<'table' | 'chart'>('table');
   
-  // Sample data - replace with actual data from your API or database
-  const balanceSheetData = {
-    assets: [
-      { category: 'Current Assets', items: [
-        { name: 'Cash and Cash Equivalents', amount: 125000 },
-        { name: 'Accounts Receivable', amount: 75000 },
-        { name: 'Inventory', amount: 95000 },
-        { name: 'Prepaid Expenses', amount: 15000 },
-      ]},
-      { category: 'Fixed Assets', items: [
-        { name: 'Property and Equipment', amount: 350000 },
-        { name: 'Less: Accumulated Depreciation', amount: -87500 },
-      ]},
-      { category: 'Other Assets', items: [
-        { name: 'Intangible Assets', amount: 45000 },
-        { name: 'Long-term Investments', amount: 65000 },
-      ]},
-    ],
-    liabilitiesAndEquity: [
-      { category: 'Current Liabilities', items: [
-        { name: 'Accounts Payable', amount: 65000 },
-        { name: 'Short-term Loans', amount: 35000 },
-        { name: 'Accrued Expenses', amount: 25000 },
-      ]},
-      { category: 'Long-term Liabilities', items: [
-        { name: 'Long-term Debt', amount: 180000 },
-        { name: 'Deferred Tax Liabilities', amount: 22500 },
-      ]},
-      { category: 'Equity', items: [
-        { name: 'Common Stock', amount: 100000 },
-        { name: 'Retained Earnings', amount: 230000 },
-      ]},
-    ]
-  };
+  // Get data from central store
+  const balanceSheetData = getBalanceSheetData();
   
   // Calculate totals
   const calculateTotal = (categories: any[]) => {
@@ -62,6 +33,23 @@ const BalanceSheet = () => {
     { name: 'Assets', value: totalAssets },
     { name: 'Liabilities & Equity', value: totalLiabilitiesAndEquity },
   ];
+
+  // Handle print and download
+  const handlePrint = () => {
+    printReport({
+      title: "Balance Sheet",
+      data: balanceSheetData,
+      fiscalYear
+    });
+  };
+
+  const handleDownload = () => {
+    downloadReport({
+      title: "Balance Sheet",
+      data: balanceSheetData,
+      fiscalYear
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -85,10 +73,10 @@ const BalanceSheet = () => {
           >
             <BarChart4 className="mr-1 h-4 w-4" /> Chart View
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="mr-1 h-4 w-4" /> Print
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleDownload}>
             <Download className="mr-1 h-4 w-4" /> Export
           </Button>
         </div>

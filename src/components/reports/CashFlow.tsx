@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -6,29 +7,15 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { ChartContainer } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FileText, Download, Printer, BarChart as BarChart4 } from 'lucide-react';
+import { getCashFlowData, monthlyData } from '@/utils/reportData';
+import { printReport, downloadReport } from '@/utils/reportUtils';
 
 const CashFlow = () => {
   const { fiscalYear } = useFiscalYear();
   const [viewType, setViewType] = useState<'table' | 'chart'>('table');
   
-  // Sample data - replace with actual data from your API or database
-  const cashFlowData = {
-    operating: [
-      { name: 'Net Income', amount: 249000, isSubtotal: false },
-      { name: 'Depreciation and Amortization', amount: 35000, isSubtotal: false },
-      { name: 'Decrease in Accounts Receivable', amount: 18000, isSubtotal: false },
-      { name: 'Increase in Inventory', amount: -25000, isSubtotal: false },
-      { name: 'Increase in Accounts Payable', amount: 12000, isSubtotal: false },
-    ],
-    investing: [
-      { name: 'Purchase of Property and Equipment', amount: -120000, isSubtotal: false },
-      { name: 'Sale of Investments', amount: 35000, isSubtotal: false },
-    ],
-    financing: [
-      { name: 'Proceeds from Long-term Debt', amount: 75000, isSubtotal: false },
-      { name: 'Dividend Payments', amount: -45000, isSubtotal: false },
-    ]
-  };
+  // Get data from central store
+  const cashFlowData = getCashFlowData();
   
   // Calculate totals
   const operatingTotal = cashFlowData.operating.reduce((total, item) => total + item.amount, 0);
@@ -36,21 +23,22 @@ const CashFlow = () => {
   const financingTotal = cashFlowData.financing.reduce((total, item) => total + item.amount, 0);
   const netCashFlow = operatingTotal + investingTotal + financingTotal;
 
-  // Prepare chart data for monthly trend
-  const monthlyData = [
-    { name: 'Jan', operating: 22500, investing: -8000, financing: 5000, net: 19500 },
-    { name: 'Feb', operating: 24000, investing: -10000, financing: 0, net: 14000 },
-    { name: 'Mar', operating: 26500, investing: -12000, financing: 0, net: 14500 },
-    { name: 'Apr', operating: 25000, investing: -15000, financing: 10000, net: 20000 },
-    { name: 'May', operating: 28000, investing: -20000, financing: 0, net: 8000 },
-    { name: 'Jun', operating: 30000, investing: -5000, financing: 0, net: 25000 },
-    { name: 'Jul', operating: 32000, investing: -10000, financing: 0, net: 22000 },
-    { name: 'Aug', operating: 30000, investing: -15000, financing: 15000, net: 30000 },
-    { name: 'Sep', operating: 28000, investing: -5000, financing: 0, net: 23000 },
-    { name: 'Oct', operating: 26000, investing: -10000, financing: 0, net: 16000 },
-    { name: 'Nov', operating: 24000, investing: -5000, financing: 0, net: 19000 },
-    { name: 'Dec', operating: 31500, investing: -5000, financing: 45000, net: 71500 },
-  ];
+  // Handle print and download
+  const handlePrint = () => {
+    printReport({
+      title: "Cash Flow Statement",
+      data: cashFlowData,
+      fiscalYear
+    });
+  };
+
+  const handleDownload = () => {
+    downloadReport({
+      title: "Cash Flow Statement",
+      data: cashFlowData,
+      fiscalYear
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -74,10 +62,10 @@ const CashFlow = () => {
           >
             <BarChart4 className="mr-1 h-4 w-4" /> Chart View
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="mr-1 h-4 w-4" /> Print
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleDownload}>
             <Download className="mr-1 h-4 w-4" /> Export
           </Button>
         </div>
@@ -231,7 +219,7 @@ const CashFlow = () => {
             >
               <LineChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
                 <Legend />

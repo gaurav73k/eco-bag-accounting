@@ -1,27 +1,39 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import React, { ReactNode } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 
 interface ReportTemplateProps {
   title: string;
-  description?: string;
-  children: React.ReactNode;
+  description: string;
+  children: ReactNode;
+  actions?: ReactNode;
 }
 
-const ReportTemplate: React.FC<ReportTemplateProps> = ({ title, description, children }) => {
+const ReportTemplate: React.FC<ReportTemplateProps> = ({ 
+  title, 
+  description, 
+  children,
+  actions
+}) => {
   const { fiscalYear } = useFiscalYear();
   
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">{title}</h2>
-        {description && <p className="text-muted-foreground">{description}</p>}
-        <p className="text-muted-foreground">Fiscal Year: {fiscalYear}</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">{title}</h2>
+          <p className="text-muted-foreground">{description}</p>
+        </div>
+        {actions && (
+          <div className="flex space-x-2">
+            {actions}
+          </div>
+        )}
       </div>
       
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-0 md:p-2">
           {children}
         </CardContent>
       </Card>

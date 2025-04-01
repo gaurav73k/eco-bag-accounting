@@ -7,28 +7,15 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { ChartContainer } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FileText, Download, Printer, LineChart } from 'lucide-react';
+import { getProfitLossData } from '@/utils/reportData';
+import { printReport, downloadReport } from '@/utils/reportUtils';
 
 const ProfitLoss = () => {
   const { fiscalYear } = useFiscalYear();
   const [viewType, setViewType] = useState<'table' | 'chart'>('table');
   
-  // Sample data - replace with actual data from your API or database
-  const profitLossData = {
-    revenue: [
-      { name: 'Sales Revenue', amount: 850000 },
-      { name: 'Service Revenue', amount: 150000 },
-      { name: 'Other Revenue', amount: 25000 },
-    ],
-    expenses: [
-      { name: 'Cost of Goods Sold', amount: 425000 },
-      { name: 'Salary Expenses', amount: 175000 },
-      { name: 'Rent Expenses', amount: 48000 },
-      { name: 'Utilities Expenses', amount: 36000 },
-      { name: 'Marketing Expenses', amount: 65000 },
-      { name: 'Depreciation Expenses', amount: 35000 },
-      { name: 'Other Expenses', amount: 42000 },
-    ]
-  };
+  // Get data from central store
+  const profitLossData = getProfitLossData();
   
   // Calculate totals
   const totalRevenue = profitLossData.revenue.reduce((total, item) => total + item.amount, 0);
@@ -41,6 +28,23 @@ const ProfitLoss = () => {
     { name: 'Expenses', value: totalExpenses },
     { name: 'Net Income', value: netIncome },
   ];
+
+  // Handle print and download
+  const handlePrint = () => {
+    printReport({
+      title: "Profit & Loss Statement",
+      data: profitLossData,
+      fiscalYear
+    });
+  };
+
+  const handleDownload = () => {
+    downloadReport({
+      title: "Profit & Loss Statement",
+      data: profitLossData,
+      fiscalYear
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -64,10 +68,10 @@ const ProfitLoss = () => {
           >
             <LineChart className="mr-1 h-4 w-4" /> Chart View
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="mr-1 h-4 w-4" /> Print
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleDownload}>
             <Download className="mr-1 h-4 w-4" /> Export
           </Button>
         </div>

@@ -1,17 +1,108 @@
 
 import React from 'react';
 import ReportTemplate from './ReportTemplate';
+import { Button } from '@/components/ui/button';
+import { Download, Printer } from 'lucide-react';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
+import { printReport, downloadReport } from '@/utils/reportUtils';
 
 const TaxReturn = () => {
+  const { fiscalYear } = useFiscalYear();
+
+  // Sample tax data
+  const taxData = {
+    taxableIncome: 249000,
+    corporateTaxRate: 0.25,
+    corporateTaxAmount: 62250,
+    deductions: [
+      { name: 'Charitable Contributions', amount: 5000 },
+      { name: 'Capital Allowances', amount: 12500 },
+      { name: 'R&D Expenses', amount: 7500 },
+    ],
+    adjustments: [
+      { name: 'Disallowed Expenses', amount: 8500 },
+      { name: 'Prior Year Adjustments', amount: -3500 },
+    ]
+  };
+
+  // Handle print and download
+  const handlePrint = () => {
+    printReport({
+      title: "Tax Return",
+      data: taxData,
+      fiscalYear
+    });
+  };
+
+  const handleDownload = () => {
+    downloadReport({
+      title: "Tax Return",
+      data: taxData,
+      fiscalYear
+    });
+  };
+
   return (
     <ReportTemplate 
       title="Tax Return" 
       description="Annual tax filing summary and tax calculation"
+      actions={
+        <>
+          <Button variant="outline" size="sm" onClick={handlePrint}>
+            <Printer className="mr-1 h-4 w-4" /> Print
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownload}>
+            <Download className="mr-1 h-4 w-4" /> Export
+          </Button>
+        </>
+      }
     >
-      <div className="space-y-4 text-center py-12">
-        <h3 className="text-xl">Tax Return Report Module</h3>
-        <p>This module will display detailed tax return information.</p>
-        <p className="text-muted-foreground">Coming soon with complete tax calculation functionality.</p>
+      <div className="space-y-4 py-6">
+        <h3 className="text-xl font-semibold">Tax Return Summary</h3>
+        <p className="text-muted-foreground">Fiscal Year {fiscalYear}</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div className="space-y-4">
+            <div className="flex justify-between p-4 bg-muted/50 rounded-md">
+              <span>Taxable Income:</span>
+              <span className="font-medium">{taxData.taxableIncome.toLocaleString()} NPR</span>
+            </div>
+            <div className="flex justify-between p-4 bg-muted/50 rounded-md">
+              <span>Corporate Tax Rate:</span>
+              <span className="font-medium">{(taxData.corporateTaxRate * 100).toFixed(1)}%</span>
+            </div>
+            <div className="flex justify-between p-4 bg-primary/10 rounded-md font-semibold">
+              <span>Corporate Tax Due:</span>
+              <span>{taxData.corporateTaxAmount.toLocaleString()} NPR</span>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <h4 className="text-lg font-medium">Tax Deductions & Adjustments</h4>
+            
+            <div className="space-y-2">
+              <h5 className="text-sm font-medium text-muted-foreground">Deductions</h5>
+              {taxData.deductions.map((item, i) => (
+                <div key={i} className="flex justify-between p-2 border-b">
+                  <span>{item.name}:</span>
+                  <span>{item.amount.toLocaleString()} NPR</span>
+                </div>
+              ))}
+            </div>
+            
+            <div className="space-y-2">
+              <h5 className="text-sm font-medium text-muted-foreground">Adjustments</h5>
+              {taxData.adjustments.map((item, i) => (
+                <div key={i} className="flex justify-between p-2 border-b">
+                  <span>{item.name}:</span>
+                  <span 
+                    className={item.amount < 0 ? "text-red-600" : undefined}
+                  >{item.amount.toLocaleString()} NPR</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </ReportTemplate>
   );

@@ -5,6 +5,10 @@ import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import { ChartContainer } from '@/components/ui/chart';
+import { Button } from '@/components/ui/button';
+import { Download, Printer } from 'lucide-react';
+import { monthlyData } from '@/utils/reportData';
+import { printReport, downloadReport } from '@/utils/reportUtils';
 
 const ExecutiveSummary = () => {
   const { fiscalYear } = useFiscalYear();
@@ -16,21 +20,6 @@ const ExecutiveSummary = () => {
     { name: 'Total Assets', value: 682500 },
     { name: 'Total Liabilities', value: 327500 },
     { name: 'Equity', value: 355000 },
-  ];
-  
-  const monthlyRevenue = [
-    { month: 'Jan', revenue: 75000, expenses: 60000, profit: 15000 },
-    { month: 'Feb', revenue: 78000, expenses: 62000, profit: 16000 },
-    { month: 'Mar', revenue: 82000, expenses: 64000, profit: 18000 },
-    { month: 'Apr', revenue: 85000, expenses: 65000, profit: 20000 },
-    { month: 'May', revenue: 88000, expenses: 66000, profit: 22000 },
-    { month: 'Jun', revenue: 90000, expenses: 67000, profit: 23000 },
-    { month: 'Jul', revenue: 91000, expenses: 68000, profit: 23000 },
-    { month: 'Aug', revenue: 89000, expenses: 67000, profit: 22000 },
-    { month: 'Sep', revenue: 87000, expenses: 66000, profit: 21000 },
-    { month: 'Oct', revenue: 85000, expenses: 65000, profit: 20000 },
-    { month: 'Nov', revenue: 86000, expenses: 64000, profit: 22000 },
-    { month: 'Dec', revenue: 89000, expenses: 62000, profit: 27000 },
   ];
   
   const revenueByCategory = [
@@ -50,10 +39,45 @@ const ExecutiveSummary = () => {
     { name: 'Debt-to-Equity', value: '0.92' },
   ];
 
+  // Prepare summary data
+  const summaryData = {
+    metrics: financialMetrics,
+    monthlyPerformance: monthlyData,
+    revenueBreakdown: revenueByCategory,
+    keyRatios: keyRatios
+  };
+
+  // Handle print and download
+  const handlePrint = () => {
+    printReport({
+      title: "Executive Summary",
+      data: summaryData,
+      fiscalYear
+    });
+  };
+
+  const handleDownload = () => {
+    downloadReport({
+      title: "Executive Summary",
+      data: summaryData,
+      fiscalYear
+    });
+  };
+
   return (
     <ReportTemplate 
       title="Executive Summary" 
       description="Key financial metrics and performance indicators"
+      actions={
+        <>
+          <Button variant="outline" size="sm" onClick={handlePrint}>
+            <Printer className="mr-1 h-4 w-4" /> Print
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownload}>
+            <Download className="mr-1 h-4 w-4" /> Export
+          </Button>
+        </>
+      }
     >
       <div className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -96,7 +120,7 @@ const ExecutiveSummary = () => {
               }}
               className="w-full h-[300px]"
             >
-              <LineChart data={monthlyRevenue}>
+              <LineChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
