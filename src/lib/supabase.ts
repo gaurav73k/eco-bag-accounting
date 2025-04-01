@@ -1,4 +1,3 @@
-
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
@@ -63,7 +62,7 @@ const createMockClient = () => {
 // Use mock client if credentials aren't available
 export const supabase = supabaseUrl && supabaseAnonKey
   ? createSupabaseClient(supabaseUrl, supabaseAnonKey)
-  : createMockClient() as unknown as ReturnType<typeof createSupabaseClient>; // Use unknown casting to avoid type conflicts
+  : createMockClient() as unknown as ReturnType<typeof createSupabaseClient>; // Fixed type casting
 
 // Re-export for convenience
 export type { Session, User } from '@supabase/supabase-js';

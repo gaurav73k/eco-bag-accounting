@@ -51,7 +51,22 @@ const AdminRoute = ({ children, requiredPermission }: { children: React.ReactNod
   return <>{children}</>;
 };
 
-// Main app without auth context (needed to avoid context before router issue)
+// Main App component
+const App = () => (
+  <TooltipProvider>
+    <Toaster />
+    <Sonner />
+    <AuthProvider>
+      <FiscalYearProvider>
+        <SettingsProvider>
+          <AppRoutes />
+        </SettingsProvider>
+      </FiscalYearProvider>
+    </AuthProvider>
+  </TooltipProvider>
+);
+
+// Main app routes component - now moved below AuthProvider initialization
 const AppRoutes = () => {
   return (
     <Routes>
@@ -98,20 +113,5 @@ const AppRoutes = () => {
     </Routes>
   );
 };
-
-// Main App component
-const App = () => (
-  <TooltipProvider>
-    <Toaster />
-    <Sonner />
-    <AuthProvider>
-      <FiscalYearProvider>
-        <SettingsProvider>
-          <AppRoutes />
-        </SettingsProvider>
-      </FiscalYearProvider>
-    </AuthProvider>
-  </TooltipProvider>
-);
 
 export default App;
