@@ -70,6 +70,12 @@ const navigationItems = [
     description: 'General ledger and accounts'
   },
   {
+    name: 'Reporting',
+    path: '/reporting',
+    icon: <BarChart4 className="h-5 w-5" />,
+    description: 'Financial reports and analysis'
+  },
+  {
     name: 'Payroll',
     path: '/payroll',
     icon: <Users className="h-5 w-5" />,

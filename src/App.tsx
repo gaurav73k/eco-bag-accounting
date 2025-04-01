@@ -21,6 +21,7 @@ import Login from "./pages/Login";
 import Invoicing from "./pages/Invoicing";
 import AccountSettings from "./pages/AccountSettings";
 import RoleManagement from "./components/RoleManagement";
+import Reporting from "./pages/Reporting"; // Add this import
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,6 +87,9 @@ const AppRoutes = () => {
       <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
       <Route path="/expenses/new" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
       <Route path="/expenses/edit/:id" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+      {/* New Reporting Routes */}
+      <Route path="/reporting" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
+      <Route path="/reporting/:reportType" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
       <Route path="/user-management" element={
         <AdminRoute requiredPermission="manage_users">
