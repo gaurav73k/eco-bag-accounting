@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { getCurrentFiscalYear } from '@/utils/nepaliDateConverter';
+import { getCurrentFiscalYear, getFiscalYearOptions, isValidBSDate, formatNepaliBS } from '@/utils/nepaliDateConverter';
 import { toast } from 'sonner';
 
 type FiscalYearContextType = {
@@ -9,6 +10,7 @@ type FiscalYearContextType = {
   availableFiscalYears: string[];
   addFiscalYear: (year: string) => boolean;
   deleteFiscalYear: (year: string) => boolean;
+  formattedFiscalYear: string; // Added formatted version for display
 };
 
 const FiscalYearContext = createContext<FiscalYearContextType | undefined>(undefined);
@@ -29,9 +31,21 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
   
   const [availableFiscalYears, setAvailableFiscalYears] = useState<string[]>(() => {
     const storedYears = localStorage.getItem('fiscalYears');
-    return storedYears ? 
-      JSON.parse(storedYears) : 
-      [currentFiscalYear, (parseInt(currentFiscalYear.split('/')[0]) - 1) + '/' + (parseInt(currentFiscalYear.split('/')[1]) - 1)];
+    if (storedYears) {
+      try {
+        return JSON.parse(storedYears);
+      } catch (e) {
+        console.error('Error parsing stored fiscal years:', e);
+        return [currentFiscalYear];
+      }
+    } else {
+      // Default to current fiscal year and previous fiscal year in Nepali format
+      const [currentYear] = currentFiscalYear.split('/').map(Number);
+      return [
+        currentFiscalYear,
+        `${currentYear - 1}/${currentYear}`
+      ];
+    }
   });
 
   const setFiscalYear = (year: string) => {
@@ -44,8 +58,16 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
   const addFiscalYear = (year: string): boolean => {
     if (!year) return false;
     
-    if (!year.match(/^\d{4}\/\d{2}$/)) {
-      toast.error('Fiscal year must be in format YYYY/YY');
+    // Validate Nepali fiscal year format: YYYY/YYYY
+    if (!year.match(/^\d{4}\/\d{4}$/)) {
+      toast.error('Fiscal year must be in format YYYY/YYYY');
+      return false;
+    }
+    
+    // Ensure the second year is exactly one more than the first
+    const [firstYear, secondYear] = year.split('/').map(Number);
+    if (secondYear !== firstYear + 1) {
+      toast.error('The second year must be exactly one year after the first');
       return false;
     }
     
@@ -54,10 +76,15 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
     
-    const updatedYears = [...availableFiscalYears, year].sort();
+    const updatedYears = [...availableFiscalYears, year].sort((a, b) => {
+      const [yearA] = a.split('/').map(Number);
+      const [yearB] = b.split('/').map(Number);
+      return yearB - yearA; // Sort in descending order (newest first)
+    });
+    
     setAvailableFiscalYears(updatedYears);
     localStorage.setItem('fiscalYears', JSON.stringify(updatedYears));
-    toast.success(`Added fiscal year ${year}`);
+    toast.success(`Added fiscal year ${year} BS`);
     return true;
   };
   
@@ -72,11 +99,14 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
     const updatedYears = availableFiscalYears.filter(y => y !== year);
     setAvailableFiscalYears(updatedYears);
     localStorage.setItem('fiscalYears', JSON.stringify(updatedYears));
-    toast.success(`Deleted fiscal year ${year}`);
+    toast.success(`Deleted fiscal year ${year} BS`);
     return true;
   };
 
   const isCurrentFiscalYear = fiscalYear === currentFiscalYear;
+  
+  // Format the fiscal year for display (add BS notation)
+  const formattedFiscalYear = `${fiscalYear} BS`;
   
   useEffect(() => {
     localStorage.setItem('fiscalYears', JSON.stringify(availableFiscalYears));
@@ -90,7 +120,8 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         isCurrentFiscalYear,
         availableFiscalYears,
         addFiscalYear,
-        deleteFiscalYear
+        deleteFiscalYear,
+        formattedFiscalYear
       }}
     >
       {children}

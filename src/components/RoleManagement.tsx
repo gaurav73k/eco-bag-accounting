@@ -1,6 +1,3 @@
-// This component can't be directly edited as it's in the read-only list.
-// If there are TypeScript issues, we should work around them.
-// We'll create a patch for the user role interfaces to ensure compatibility.
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -56,41 +53,69 @@ const RoleManagement = () => {
         throw rolesError;
       }
       
-      setRoles(rolesData || []);
+      if (rolesData) {
+        // Map the permissions from JSON to string array
+        const typedRoles: Role[] = rolesData.map(role => ({
+          id: role.id,
+          name: role.name,
+          permissions: Array.isArray(role.permissions) 
+            ? role.permissions as string[] 
+            : []
+        }));
+        
+        setRoles(typedRoles);
+      }
       
-      // Fetch users with their roles
-      const { data: authUsers, error: authUsersError } = await supabase
+      // First, fetch all profiles
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          name,
-          email:auth.users!id(email),
-          user_role:user_roles(role_id, roles(id, name))
-        `);
+        .select('id, name');
       
-      if (authUsersError) {
-        throw authUsersError;
+      if (profilesError) {
+        throw profilesError;
+      }
+      
+      // Fetch user emails from auth.users
+      const { data: authData, error: authError } = await supabase
+        .from('auth')
+        .select('users (id, email)');
+      
+      if (authError) {
+        console.error('Error fetching auth users:', authError);
+      }
+      
+      // Fetch user_roles
+      const { data: userRolesData, error: userRolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role_id, roles (id, name)');
+      
+      if (userRolesError) {
+        throw userRolesError;
       }
       
       // Process and map the user data
-      const processedUsers = authUsers?.map(user => {
-        // Safely access nested properties
-        const userRoleData = user.user_role && user.user_role.length > 0 
-          ? user.user_role[0] 
-          : null;
-        
-        const roleId = userRoleData?.role_id || '';
-        const roleName = userRoleData?.roles?.name || 'No Role';
-        
-        return {
-          id: user.id,
-          email: user.email?.email || '',
-          name: user.name || '',
-          roleId: roleId,
-          roleName: roleName,
-          active: true
-        };
-      }) || [];
+      const processedUsers: User[] = [];
+      
+      if (profilesData) {
+        for (const profile of profilesData) {
+          // Find email
+          const email = authData?.users?.find(user => user.id === profile.id)?.email || '';
+          
+          // Find role
+          const userRole = userRolesData?.find(ur => ur.user_id === profile.id);
+          const roleId = userRole?.role_id || '';
+          const roleName = userRole?.roles?.name || 'No Role';
+          
+          processedUsers.push({
+            id: profile.id,
+            email,
+            name: profile.name || '',
+            roleId,
+            roleName,
+            active: true
+          });
+        }
+      }
       
       setUsers(processedUsers);
     } catch (error) {
