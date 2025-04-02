@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,11 +15,21 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login, resetPassword } = useAuth();
+  const { login, resetPassword, isAuthenticated, loading } = useAuth();
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Redirect authenticated users
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate, location]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +103,14 @@ const Login: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
@@ -203,6 +222,17 @@ const Login: React.FC = () => {
                 >
                   {isLoading ? 'Signing in...' : isLocked ? 'Account Locked' : 'Sign In'}
                 </Button>
+                
+                <p className="text-sm text-center text-muted-foreground">
+                  Don't have an account?{" "}
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-sm"
+                    onClick={() => toast.info("Please contact your administrator to create an account.")}
+                  >
+                    Contact admin
+                  </Button>
+                </p>
               </div>
             </form>
           )}

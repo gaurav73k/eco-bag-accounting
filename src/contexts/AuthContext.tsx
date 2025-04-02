@@ -2,7 +2,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { supabase, User, Session } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
+import type { User, Session } from '@supabase/supabase-js';
 
 export type Permission = 
   | 'create_entry' 
@@ -40,43 +41,7 @@ type AuthContextType = {
   hasPermission: (permission: Permission) => boolean;
   resetPassword: (email: string) => Promise<void>;
   updateUserRole: (userId: string, roleId: string) => Promise<void>;
-};
-
-// Define roles with permissions (will be moved to DB with Supabase)
-const roles: Record<string, UserRole> = {
-  'admin': {
-    id: '1',
-    name: 'Super Admin',
-    permissions: [
-      'create_entry', 
-      'edit_entry', 
-      'delete_entry', 
-      'restore_entry', 
-      'view_history', 
-      'manage_users', 
-      'manage_roles', 
-      'manage_fiscal_year',
-      'bulk_edit', 
-      'bulk_delete',
-      'print_invoice',
-      'download_invoice'
-    ]
-  },
-  'accountant': {
-    id: '2',
-    name: 'Accountant',
-    permissions: ['create_entry', 'edit_entry', 'view_history', 'print_invoice', 'download_invoice']
-  },
-  'manager': {
-    id: '3',
-    name: 'Manager',
-    permissions: ['create_entry', 'edit_entry', 'view_history', 'print_invoice']
-  },
-  'viewer': {
-    id: '4',
-    name: 'Viewer',
-    permissions: ['view_history']
-  }
+  loading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -92,61 +57,78 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const isAuthenticated = !!user;
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
+      async (event, currentSession) => {
+        setSession(currentSession);
         
-        if (event === 'SIGNED_IN' && session) {
+        if (event === 'SIGNED_IN' && currentSession) {
           try {
             // Fetch user details including role
+            const { data: userRoles, error: userRolesError } = await supabase
+              .from('user_roles')
+              .select('role_id, roles(*)')
+              .eq('user_id', currentSession.user.id)
+              .single();
+            
+            if (userRolesError || !userRoles) {
+              console.error('Error fetching user roles:', userRolesError);
+              setLoading(false);
+              return;
+            }
+            
             const { data: userData, error } = await supabase
-              .from('users')
-              .select('*, roles(*)')
-              .eq('id', session.user.id)
+              .from('profiles')
+              .select('*')
+              .eq('id', currentSession.user.id)
               .single();
             
             if (error || !userData) {
               console.error('Error fetching user data:', error);
-              // Fallback to existing role system until DB is set up
-              const userWithRole: AuthUser = {
-                id: session.user.id,
-                name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || '',
-                email: session.user.email || '',
-                roleId: 'admin', // Default role
-                role: roles['admin']
-              };
-              setUser(userWithRole);
-            } else {
-              // Map DB role to our format
-              const userWithRole: AuthUser = {
-                id: userData.id,
-                name: userData.name || session.user.email?.split('@')[0] || '',
-                email: userData.email,
-                roleId: userData.role_id,
-                // If roles are in DB, use that, otherwise use our hardcoded ones
-                role: userData.roles || roles[userData.role_id] || roles['viewer']
-              };
-              setUser(userWithRole);
+              setLoading(false);
+              return;
             }
+
+            // Map DB role to our format
+            const userWithRole: AuthUser = {
+              id: userData.id,
+              name: userData.name || currentSession.user.email?.split('@')[0] || '',
+              email: currentSession.user.email || '',
+              roleId: userRoles.role_id,
+              role: {
+                id: userRoles.roles.id,
+                name: userRoles.roles.name,
+                permissions: userRoles.roles.permissions as Permission[]
+              }
+            };
+            
+            setUser(userWithRole);
           } catch (error) {
             console.error('Error setting up user:', error);
+          } finally {
+            setLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+          setLoading(false);
         }
       }
     );
 
     // Initial session check
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      
+      if (initialSession) {
         // Auth state change listener will handle setting up the user
+        // We don't set loading to false here as onAuthStateChange will do it
+      } else {
+        setLoading(false);
       }
     };
     
@@ -155,10 +137,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -166,6 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         toast.error(error.message);
+        setLoading(false);
         return false;
       }
       
@@ -174,14 +158,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (error) {
       toast.error('Failed to log in');
+      setLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
+    setLoading(true);
     await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('user'); // Clean up old storage
+    setLoading(false);
     toast.success('Successfully logged out');
     navigate('/login');
   };
@@ -205,8 +191,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateUserRole = async (userId: string, roleId: string) => {
-    // This will be implemented with Supabase
-    toast.success('User role updated');
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role_id: roleId })
+        .eq('user_id', userId);
+        
+      if (error) {
+        toast.error('Failed to update user role');
+        throw error;
+      }
+      
+      toast.success('User role updated');
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      throw error;
+    }
   };
 
   return (
@@ -217,7 +217,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout, 
       hasPermission,
       resetPassword,
-      updateUserRole
+      updateUserRole,
+      loading
     }}>
       {children}
     </AuthContext.Provider>

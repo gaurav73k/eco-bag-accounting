@@ -5,19 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
 import './index.css';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
-// Check if Supabase environment variables are properly configured
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  console.warn('Supabase credentials not found. The app will run with limited functionality.');
-  
-  // Show toast notification after DOM is loaded
-  setTimeout(() => {
-    toast.warning(
-      'Supabase credentials not found. Some features may be limited.',
-      { duration: 10000 }
-    );
-  }, 1000);
-}
+// Initialize authentication
+const initAuth = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  return { session };
+};
 
 // Create a client
 const queryClient = new QueryClient({
@@ -29,10 +23,13 @@ const queryClient = new QueryClient({
   },
 });
 
-createRoot(document.getElementById("root")!).render(
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </BrowserRouter>
-);
+// Initialize authentication and then render the app
+initAuth().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+});

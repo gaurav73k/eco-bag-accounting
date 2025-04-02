@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { FiscalYearProvider } from "./contexts/FiscalYearContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
@@ -27,10 +27,18 @@ import Reporting from "./pages/Reporting";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+  
+  if (loading) {
+    return <div className="h-screen w-full flex items-center justify-center">
+      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+    </div>;
+  }
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    // Save the location they were trying to go to for a successful login
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   return <>{children}</>;
@@ -38,10 +46,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Admin route component that requires specific permissions
 const AdminRoute = ({ children, requiredPermission }: { children: React.ReactNode, requiredPermission: string }) => {
-  const { isAuthenticated, hasPermission } = useAuth();
+  const { isAuthenticated, hasPermission, loading } = useAuth();
+  const location = useLocation();
+  
+  if (loading) {
+    return <div className="h-screen w-full flex items-center justify-center">
+      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+    </div>;
+  }
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   if (!hasPermission(requiredPermission as any)) {
@@ -49,6 +64,27 @@ const AdminRoute = ({ children, requiredPermission }: { children: React.ReactNod
   }
   
   return <>{children}</>;
+};
+
+// AuthWrapper component to handle auth redirects
+const AuthWrapper = () => {
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+  
+  if (loading) {
+    return <div className="h-screen w-full flex items-center justify-center">
+      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+    </div>;
+  }
+  
+  // If user is authenticated and trying to access login/reset-password pages,
+  // redirect them to homepage
+  if (isAuthenticated && 
+      (location.pathname === '/login' || location.pathname === '/reset-password')) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <AppRoutes />;
 };
 
 // Main App component
@@ -59,14 +95,14 @@ const App = () => (
     <AuthProvider>
       <FiscalYearProvider>
         <SettingsProvider>
-          <AppRoutes />
+          <AuthWrapper />
         </SettingsProvider>
       </FiscalYearProvider>
     </AuthProvider>
   </TooltipProvider>
 );
 
-// Main app routes component - now moved below AuthProvider initialization
+// Main app routes component
 const AppRoutes = () => {
   return (
     <Routes>

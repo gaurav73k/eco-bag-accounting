@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { KeyRound, CheckCircle } from 'lucide-react';
 import Logo from '@/components/Logo';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -17,15 +18,21 @@ const ResetPassword = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
+  const { isAuthenticated } = useAuth();
+  
   useEffect(() => {
+    // If user is authenticated, redirect them to the homepage
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+    
     // Check if hash fragment contains token from email link
     const hashFragment = location.hash;
     if (!hashFragment || !hashFragment.includes('type=recovery')) {
       toast.error('Invalid password reset link');
-      navigate('/login');
+      navigate('/login', { replace: true });
     }
-  }, [location, navigate]);
+  }, [location, navigate, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +64,7 @@ const ResetPassword = () => {
       
       // Redirect to login after 3 seconds
       setTimeout(() => {
-        navigate('/login');
+        navigate('/login', { replace: true });
       }, 3000);
       
     } catch (error) {

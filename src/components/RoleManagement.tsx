@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { PlusCircle, Edit, Trash2, Save, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Save, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -19,70 +20,47 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth, Permission } from '@/contexts/AuthContext';
 
 // Define types
-type Permission = {
-  id: string;
-  name: string;
-  description: string;
-};
-
 type Role = {
   id: string;
   name: string;
-  description: string;
-  permissions: Record<string, boolean>;
+  description?: string;
+  permissions: Permission[];
 };
 
 type User = {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role_id: string;
   active: boolean;
 };
 
-// Initial permissions list
-const permissionsList: Permission[] = [
-  { id: 'view_dashboard', name: 'View Dashboard', description: 'Can view the main dashboard' },
-  { id: 'manage_sales', name: 'Manage Sales', description: 'Can create, edit, and delete sales' },
-  { id: 'view_sales', name: 'View Sales', description: 'Can view sales data' },
-  { id: 'manage_purchases', name: 'Manage Purchases', description: 'Can create, edit, and delete purchases' },
-  { id: 'view_purchases', name: 'View Purchases', description: 'Can view purchases data' },
-  { id: 'manage_inventory', name: 'Manage Inventory', description: 'Can add, edit, and remove inventory items' },
-  { id: 'view_inventory', name: 'View Inventory', description: 'Can view inventory data' },
-  { id: 'manage_ledger', name: 'Manage Ledger', description: 'Can create and edit ledger entries' },
-  { id: 'view_ledger', name: 'View Ledger', description: 'Can view ledger data' },
-  { id: 'manage_payroll', name: 'Manage Payroll', description: 'Can process payroll and manage employee compensation' },
-  { id: 'view_payroll', name: 'View Payroll', description: 'Can view payroll information' },
+// Define permission options
+const permissionsList: { id: Permission; name: string; description: string }[] = [
+  { id: 'create_entry', name: 'Create Entry', description: 'Can create new entries' },
+  { id: 'edit_entry', name: 'Edit Entry', description: 'Can edit existing entries' },
+  { id: 'delete_entry', name: 'Delete Entry', description: 'Can delete entries' },
+  { id: 'restore_entry', name: 'Restore Entry', description: 'Can restore deleted entries' },
+  { id: 'view_history', name: 'View History', description: 'Can view entry history' },
   { id: 'manage_users', name: 'Manage Users', description: 'Can add, edit, and delete users' },
   { id: 'manage_roles', name: 'Manage Roles', description: 'Can define and edit roles and permissions' },
-  { id: 'generate_reports', name: 'Generate Reports', description: 'Can generate and download reports' },
-  { id: 'manage_settings', name: 'Manage Settings', description: 'Can modify system settings' },
-];
-
-// Initial roles - only include the Super Admin role
-const initialRoles: Role[] = [
-  {
-    id: '1',
-    name: 'Super Admin',
-    description: 'Full system access with all permissions',
-    permissions: permissionsList.reduce((acc, permission) => {
-      acc[permission.id] = true;
-      return acc;
-    }, {} as Record<string, boolean>),
-  }
-];
-
-// Initial users - only include the admin user
-const initialUsers: User[] = [
-  { id: '1', name: 'Admin User', email: 'admin@example.com', role: '1', active: true }
+  { id: 'manage_fiscal_year', name: 'Manage Fiscal Year', description: 'Can create and manage fiscal years' },
+  { id: 'bulk_edit', name: 'Bulk Edit', description: 'Can edit multiple entries at once' },
+  { id: 'bulk_delete', name: 'Bulk Delete', description: 'Can delete multiple entries at once' },
+  { id: 'print_invoice', name: 'Print Invoice', description: 'Can print invoices' },
+  { id: 'download_invoice', name: 'Download Invoice', description: 'Can download invoices' },
 ];
 
 const RoleManagement: React.FC = () => {
-  const [roles, setRoles] = useState<Role[]>(initialRoles);
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [selectedTab, setSelectedTab] = useState<'roles' | 'users'>('roles');
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   
   // Role dialog state
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
@@ -96,13 +74,78 @@ const RoleManagement: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'role' | 'user', id: string } | null>(null);
 
+  // Fetch roles and users from Supabase
+  useEffect(() => {
+    const fetchRolesAndUsers = async () => {
+      setLoading(true);
+      try {
+        // Fetch roles
+        const { data: rolesData, error: rolesError } = await supabase
+          .from('roles')
+          .select('*');
+        
+        if (rolesError) {
+          console.error('Error fetching roles:', rolesError);
+          toast.error('Failed to load roles');
+        } else {
+          const formattedRoles = rolesData.map((role) => ({
+            ...role,
+            permissions: role.permissions as Permission[]
+          }));
+          setRoles(formattedRoles);
+        }
+        
+        // Fetch users with their roles
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            name,
+            email:auth.users!id(email),
+            role_id:user_roles!inner(role_id),
+            active:auth.users!id(is_active)
+          `);
+        
+        if (userError) {
+          console.error('Error fetching users:', userError);
+          toast.error('Failed to load users');
+        } else if (userData) {
+          // Transform the nested data structure
+          const formattedUsers = userData.map((user) => {
+            // Extract the email, role_id, and active status from the nested structures
+            const email = user.email?.[0]?.email || '';
+            const role_id = user.role_id?.[0]?.role_id || '';
+            const active = user.active?.[0]?.is_active ?? true;
+            
+            return {
+              id: user.id,
+              name: user.name || '',
+              email,
+              role_id,
+              active
+            };
+          });
+          
+          setUsers(formattedUsers);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        toast.error('An unexpected error occurred while loading data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRolesAndUsers();
+  }, []);
+
   // Role handlers
   const handleAddRole = () => {
     setCurrentRole({
-      id: `role-${Date.now()}`,
+      id: '',
       name: '',
       description: '',
-      permissions: {},
+      permissions: [],
     });
     setIsRoleDialogOpen(true);
   };
@@ -112,29 +155,69 @@ const RoleManagement: React.FC = () => {
     setIsRoleDialogOpen(true);
   };
 
-  const handleSaveRole = (role: Role) => {
+  const handleSaveRole = async (role: Role) => {
     if (!role.name) {
       toast.error("Role name is required");
       return;
     }
 
-    const updatedRoles = role.id
-      ? roles.map((r) => (r.id === role.id ? role : r))
-      : [...roles, role];
-    
-    setRoles(updatedRoles);
-    setIsRoleDialogOpen(false);
-    setCurrentRole(null);
-    toast.success(`Role ${role.id ? 'updated' : 'created'} successfully`);
+    try {
+      let result;
+      
+      if (role.id) {
+        // Update existing role
+        const { data, error } = await supabase
+          .from('roles')
+          .update({ 
+            name: role.name, 
+            permissions: role.permissions,
+            description: role.description
+          })
+          .eq('id', role.id)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        result = data;
+        
+        // Update local state
+        setRoles(roles.map(r => r.id === role.id ? { ...result, permissions: result.permissions as Permission[] } : r));
+        toast.success(`Role ${role.name} updated successfully`);
+      } else {
+        // Create new role
+        const { data, error } = await supabase
+          .from('roles')
+          .insert({ 
+            name: role.name, 
+            permissions: role.permissions,
+            description: role.description 
+          })
+          .select()
+          .single();
+          
+        if (error) throw error;
+        result = data;
+        
+        // Update local state
+        setRoles([...roles, { ...result, permissions: result.permissions as Permission[] }]);
+        toast.success(`Role ${role.name} created successfully`);
+      }
+      
+      setIsRoleDialogOpen(false);
+      setCurrentRole(null);
+    } catch (error) {
+      console.error('Error saving role:', error);
+      toast.error('Failed to save role');
+    }
   };
 
   // User handlers
   const handleAddUser = () => {
     setCurrentUser({
-      id: `user-${Date.now()}`,
+      id: '',
       name: '',
       email: '',
-      role: '',
+      role_id: '',
       active: true,
     });
     setIsUserDialogOpen(true);
@@ -145,32 +228,67 @@ const RoleManagement: React.FC = () => {
     setIsUserDialogOpen(true);
   };
 
-  const handleSaveUser = (user: User) => {
-    if (!user.name || !user.email || !user.role) {
+  const handleSaveUser = async (user: User) => {
+    if (!user.name || !user.email || !user.role_id) {
       toast.error("Name, email, and role are required");
       return;
     }
 
-    const updatedUsers = user.id
-      ? users.map((u) => (u.id === user.id ? user : u))
-      : [...users, user];
-    
-    setUsers(updatedUsers);
-    setIsUserDialogOpen(false);
-    setCurrentUser(null);
-    toast.success(`User ${user.id ? 'updated' : 'created'} successfully`);
+    try {
+      if (user.id) {
+        // Update existing user's role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({ role_id: user.role_id })
+          .eq('user_id', user.id);
+          
+        if (roleError) throw roleError;
+        
+        // Update profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ name: user.name })
+          .eq('id', user.id);
+          
+        if (profileError) throw profileError;
+        
+        // Update local state
+        setUsers(users.map(u => u.id === user.id ? user : u));
+        toast.success(`User ${user.name} updated successfully`);
+      } else {
+        // Creating new users would require admin access to auth API
+        // This should be handled through an edge function
+        toast.error('Creating new users directly is not supported. Please invite users through Supabase admin panel.');
+        return;
+      }
+      
+      setIsUserDialogOpen(false);
+      setCurrentUser(null);
+    } catch (error) {
+      console.error('Error saving user:', error);
+      toast.error('Failed to save user');
+    }
   };
 
-  const handleToggleUserActive = (userId: string, active: boolean) => {
-    setUsers(
-      users.map((user) => {
-        if (user.id === userId) {
-          return { ...user, active };
-        }
-        return user;
-      })
-    );
-    toast.success(`User ${active ? 'activated' : 'deactivated'}`);
+  const handleToggleUserActive = async (userId: string, active: boolean) => {
+    try {
+      // Toggling user active status would require admin access to auth API
+      // This should be handled through an edge function
+      toast.info('Toggling user active status is not implemented in this demo.');
+      
+      // Update local state for the demo
+      setUsers(
+        users.map((user) => {
+          if (user.id === userId) {
+            return { ...user, active };
+          }
+          return user;
+        })
+      );
+    } catch (error) {
+      console.error('Error toggling user active status:', error);
+      toast.error('Failed to update user status');
+    }
   };
 
   // Delete handlers
@@ -179,29 +297,59 @@ const RoleManagement: React.FC = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!itemToDelete) return;
 
-    if (itemToDelete.type === 'role') {
-      // Check if any users are using this role
-      const usersWithRole = users.filter((user) => user.role === itemToDelete.id);
-      if (usersWithRole.length > 0) {
-        toast.error("Cannot delete role because it is assigned to users");
-        setDeleteDialogOpen(false);
-        setItemToDelete(null);
+    try {
+      if (itemToDelete.type === 'role') {
+        // Check if any users are using this role
+        const { data: usersWithRole, error: checkError } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role_id', itemToDelete.id);
+          
+        if (checkError) throw checkError;
+        
+        if (usersWithRole && usersWithRole.length > 0) {
+          toast.error("Cannot delete role because it is assigned to users");
+          setDeleteDialogOpen(false);
+          setItemToDelete(null);
+          return;
+        }
+
+        // Delete role
+        const { error } = await supabase
+          .from('roles')
+          .delete()
+          .eq('id', itemToDelete.id);
+          
+        if (error) throw error;
+        
+        // Update local state
+        setRoles(roles.filter((role) => role.id !== itemToDelete.id));
+        toast.success("Role deleted successfully");
+      } else {
+        // Deleting users would require admin access to auth API
+        // This should be handled through an edge function
+        toast.error('Deleting users directly is not supported in this demo.');
         return;
       }
-
-      setRoles(roles.filter((role) => role.id !== itemToDelete.id));
-      toast.success("Role deleted successfully");
-    } else {
-      setUsers(users.filter((user) => user.id !== itemToDelete.id));
-      toast.success("User deleted successfully");
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      toast.error('Failed to delete item');
+    } finally {
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
     }
-
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -254,7 +402,7 @@ const RoleManagement: React.FC = () => {
                     <TableCell>{role.description}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {Object.entries(role.permissions).filter(([_, hasPermission]) => hasPermission).map(([permId, _]) => {
+                        {role.permissions.map((permId) => {
                           const permission = permissionsList.find((p) => p.id === permId);
                           return permission ? (
                             <span key={permId} className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
@@ -269,7 +417,7 @@ const RoleManagement: React.FC = () => {
                         <Button variant="ghost" size="icon" onClick={() => handleEditRole(role)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        {role.id !== '1' && ( // Prevent deleting Super Admin
+                        {role.name !== 'Super Admin' && ( // Prevent deleting Super Admin
                           <Button variant="ghost" size="icon" onClick={() => handleRequestDelete('role', role.id)}>
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
@@ -303,32 +451,32 @@ const RoleManagement: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => {
-                  const userRole = roles.find((role) => role.id === user.role);
+                {users.map((userData) => {
+                  const userRole = roles.find((role) => role.id === userData.role_id);
                   return (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{userRole?.name || 'Unknown Role'}</TableCell>
+                    <TableRow key={userData.id}>
+                      <TableCell className="font-medium">{userData.name}</TableCell>
+                      <TableCell>{userData.email}</TableCell>
+                      <TableCell>{userRole?.name || 'No Role'}</TableCell>
                       <TableCell>
                         <div className="flex items-center">
                           <Switch
-                            checked={user.active}
-                            onCheckedChange={(checked) => handleToggleUserActive(user.id, checked)}
+                            checked={userData.active}
+                            onCheckedChange={(checked) => handleToggleUserActive(userData.id, checked)}
                             className="mr-2"
                           />
-                          <span className={user.active ? 'text-green-600' : 'text-red-600'}>
-                            {user.active ? 'Active' : 'Inactive'}
+                          <span className={userData.active ? 'text-green-600' : 'text-red-600'}>
+                            {userData.active ? 'Active' : 'Inactive'}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)}>
+                          <Button variant="ghost" size="icon" onClick={() => handleEditUser(userData)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          {user.id !== '1' && ( // Prevent deleting main admin
-                            <Button variant="ghost" size="icon" onClick={() => handleRequestDelete('user', user.id)}>
+                          {userData.id !== user?.id && ( // Prevent deleting current user
+                            <Button variant="ghost" size="icon" onClick={() => handleRequestDelete('user', userData.id)}>
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           )}
@@ -365,7 +513,7 @@ const RoleManagement: React.FC = () => {
                   <Label htmlFor="description">Description</Label>
                   <Input
                     id="description"
-                    value={currentRole.description}
+                    value={currentRole.description || ''}
                     onChange={(e) => setCurrentRole({ ...currentRole, description: e.target.value })}
                     placeholder="Enter role description"
                   />
@@ -380,14 +528,15 @@ const RoleManagement: React.FC = () => {
                       <div key={permission.id} className="flex items-start space-x-2 p-2 border rounded hover:bg-muted/30">
                         <Switch
                           id={`perm-${permission.id}`}
-                          checked={!!currentRole.permissions[permission.id]}
+                          checked={currentRole.permissions.includes(permission.id)}
                           onCheckedChange={(checked) => {
+                            const updatedPermissions = checked
+                              ? [...currentRole.permissions, permission.id]
+                              : currentRole.permissions.filter(p => p !== permission.id);
+                              
                             setCurrentRole({
                               ...currentRole,
-                              permissions: {
-                                ...currentRole.permissions,
-                                [permission.id]: checked,
-                              },
+                              permissions: updatedPermissions,
                             });
                           }}
                         />
@@ -445,13 +594,14 @@ const RoleManagement: React.FC = () => {
                   value={currentUser.email}
                   onChange={(e) => setCurrentUser({ ...currentUser, email: e.target.value })}
                   placeholder="Enter user email"
+                  disabled={!!currentUser.id} // Can't edit email of existing users
                 />
               </div>
               <div>
                 <Label htmlFor="role">Role</Label>
                 <Select
-                  value={currentUser.role}
-                  onValueChange={(value) => setCurrentUser({ ...currentUser, role: value })}
+                  value={currentUser.role_id}
+                  onValueChange={(value) => setCurrentUser({ ...currentUser, role_id: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
