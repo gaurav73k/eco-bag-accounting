@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -94,34 +95,60 @@ const RoleManagement: React.FC = () => {
           setRoles(formattedRoles);
         }
         
-        // Fetch users with their roles
+        // Fetch users with their roles - updated query with proper join strategy
         const { data: userData, error: userError } = await supabase
           .from('profiles')
           .select(`
             id,
             name,
-            email:auth.users!id(email),
-            role_id:user_roles!inner(role_id),
-            active:auth.users!id(is_active)
+            user_roles!inner (role_id)
           `);
         
         if (userError) {
           console.error('Error fetching users:', userError);
           toast.error('Failed to load users');
         } else if (userData) {
-          // Transform the nested data structure
+          // Now get email data separately to avoid nested query issues
+          const userIds = userData.map(user => user.id);
+          
+          // Get all user roles to map them
+          const { data: userRolesData } = await supabase
+            .from('user_roles')
+            .select('user_id, role_id')
+            .in('user_id', userIds);
+            
+          // Get user emails from auth
+          const { data: authData } = await supabase.auth.admin.listUsers();
+          const emailMap = new Map();
+          
+          if (authData) {
+            authData.users.forEach(user => {
+              emailMap.set(user.id, {
+                email: user.email || '',
+                active: !user.banned
+              });
+            });
+          }
+          
+          // Map user roles to users
+          const roleMap = new Map();
+          if (userRolesData) {
+            userRolesData.forEach(ur => {
+              roleMap.set(ur.user_id, ur.role_id);
+            });
+          }
+          
+          // Transform the data structure
           const formattedUsers = userData.map((user) => {
-            // Extract the email, role_id, and active status from the nested structures
-            const email = user.email?.[0]?.email || '';
-            const role_id = user.role_id?.[0]?.role_id || '';
-            const active = user.active?.[0]?.is_active ?? true;
+            const userAuth = emailMap.get(user.id) || { email: '', active: true };
+            const role_id = roleMap.get(user.id) || '';
             
             return {
               id: user.id,
               name: user.name || '',
-              email,
-              role_id,
-              active
+              email: userAuth.email,
+              role_id: role_id,
+              active: userAuth.active
             };
           });
           

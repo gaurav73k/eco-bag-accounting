@@ -36,6 +36,54 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          company_address: string
+          company_email: string
+          company_name: string
+          company_phone: string
+          favicon_url: string | null
+          font_family: string
+          id: string
+          logo_url: string | null
+          primary_color: string
+          secondary_color: string
+          site_title: string
+          tax_number: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_address?: string
+          company_email?: string
+          company_name?: string
+          company_phone?: string
+          favicon_url?: string | null
+          font_family?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          secondary_color?: string
+          site_title?: string
+          tax_number?: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_address?: string
+          company_email?: string
+          company_name?: string
+          company_phone?: string
+          favicon_url?: string | null
+          font_family?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          secondary_color?: string
+          site_title?: string
+          tax_number?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       fiscal_years: {
         Row: {
           created_at: string | null
