@@ -54,6 +54,13 @@ export const useAuth = () => {
   return context;
 };
 
+// Default role with minimal permissions when user has no role assigned
+const DEFAULT_ROLE: UserRole = {
+  id: 'default',
+  name: 'Default',
+  permissions: ['view_history']
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -81,20 +88,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   id, name, permissions
                 )
               `)
-              .eq('user_id', currentSession.user.id)
-              .single();
+              .eq('user_id', currentSession.user.id);
             
             if (userRolesError) {
               console.error('Error fetching user roles:', userRolesError);
-              setLoading(false);
-              return;
+              // Continue with default role instead of returning early
             }
             
-            if (!userRoles) {
-              console.error('No user role found');
-              setLoading(false);
-              return;
-            }
+            // Use first role if available, otherwise use default role
+            const roleData = userRoles && userRoles.length > 0 ? {
+              roleId: userRoles[0].role_id,
+              role: {
+                id: userRoles[0].roles.id,
+                name: userRoles[0].roles.name,
+                permissions: userRoles[0].roles.permissions as Permission[]
+              }
+            } : {
+              roleId: DEFAULT_ROLE.id,
+              role: DEFAULT_ROLE
+            };
             
             const { data: userData, error } = await supabase
               .from('profiles')
@@ -104,6 +116,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             if (error || !userData) {
               console.error('Error fetching user data:', error);
+              
+              // Create a basic user profile if none exists
+              const defaultName = currentSession.user.email?.split('@')[0] || '';
+              
+              // Create user with default role data
+              const userWithRole: AuthUser = {
+                id: currentSession.user.id,
+                name: defaultName,
+                email: currentSession.user.email || '',
+                ...roleData
+              };
+              
+              setUser(userWithRole);
+              
+              // If the user was on login page, redirect to home
+              if (window.location.pathname === '/login') {
+                console.log('Redirecting from login to home');
+                navigate('/');
+              }
+              
               setLoading(false);
               return;
             }
@@ -113,12 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               id: userData.id,
               name: userData.name || currentSession.user.email?.split('@')[0] || '',
               email: currentSession.user.email || '',
-              roleId: userRoles.role_id,
-              role: {
-                id: userRoles.roles.id,
-                name: userRoles.roles.name,
-                permissions: userRoles.roles.permissions as Permission[]
-              }
+              ...roleData
             };
             
             console.log('User with role data:', userWithRole);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -8,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import Logo from '@/components/Logo';
 import { Eye, EyeOff, Shield, MailIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { ensureUserRole, initializeDatabase } from '@/utils/dbSetup';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -52,7 +55,18 @@ const Login: React.FC = () => {
       console.log("Attempting login with:", email);
       const success = await login(email, password);
       
-      if (!success) {
+      if (success) {
+        console.log("Login successful!");
+        
+        // Get the current user
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          // Initialize database if needed and ensure user has a role
+          await initializeDatabase(session.user.id);
+        }
+        
+        // Redirect is handled by useEffect above
+      } else {
         // Increment login attempts
         const attempts = loginAttempts + 1;
         setLoginAttempts(attempts);
@@ -70,8 +84,6 @@ const Login: React.FC = () => {
         } else {
           toast.error(`Login failed. ${5 - attempts} attempts remaining before lockout.`);
         }
-      } else {
-        console.log("Login successful!");
       }
     } catch (error) {
       console.error('Login error:', error);

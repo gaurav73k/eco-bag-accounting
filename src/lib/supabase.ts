@@ -1,7 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
+import type { Permission } from '@/contexts/AuthContext';
 
 // Re-export for convenience
 export type { Session, User } from '@supabase/supabase-js';
@@ -10,6 +10,72 @@ export type { Session, User } from '@supabase/supabase-js';
 export const getCurrentUser = async () => {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.user;
+};
+
+// Create user role if it doesn't exist
+export const ensureUserHasRole = async (userId: string, defaultRoleId: string = '1') => {
+  try {
+    // Check if user role exists
+    const { data: existingRole, error: checkError } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', userId);
+    
+    if (checkError) {
+      console.error('Error checking user role:', checkError);
+      return null;
+    }
+    
+    // If user doesn't have a role, assign the default one
+    if (!existingRole || existingRole.length === 0) {
+      console.log(`User ${userId} has no role, assigning default role ${defaultRoleId}`);
+      
+      const { data, error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role_id: defaultRoleId
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error assigning default role:', error);
+        return null;
+      }
+      
+      return data;
+    }
+    
+    return existingRole[0];
+  } catch (err) {
+    console.error('Error in ensureUserHasRole:', err);
+    return null;
+  }
+};
+
+// User profile management
+export const createUserProfile = async (userId: string, name: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert({
+        id: userId,
+        name: name
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating user profile:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Error in createUserProfile:', err);
+    return null;
+  }
 };
 
 // Settings related functions
@@ -75,21 +141,54 @@ export const resetUserPassword = async (email: string) => {
 
 export const updateUserRole = async (userId: string, roleId: string) => {
   try {
-    const { data, error } = await supabase
+    // Check if user_role entry exists
+    const { data: existingRole, error: checkError } = await supabase
       .from('user_roles')
-      .update({ role_id: roleId })
-      .eq('user_id', userId)
-      .select()
-      .single();
+      .select('*')
+      .eq('user_id', userId);
     
-    if (error) {
-      console.error('Error updating user role:', error);
-      throw error;
+    if (checkError) {
+      console.error('Error checking user role:', checkError);
+      throw checkError;
     }
     
-    return data;
+    let result;
+    
+    // If entry exists, update it; otherwise, insert new entry
+    if (existingRole && existingRole.length > 0) {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .update({ role_id: roleId })
+        .eq('user_id', userId)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating user role:', error);
+        throw error;
+      }
+      
+      result = data;
+    } else {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role_id: roleId })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating user role:', error);
+        throw error;
+      }
+      
+      result = data;
+    }
+    
+    toast.success('User role updated');
+    return result;
   } catch (err) {
     console.error('Error in updateUserRole:', err);
+    toast.error('Failed to update user role');
     throw err;
   }
 };
