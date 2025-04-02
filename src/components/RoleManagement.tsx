@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -87,7 +86,7 @@ const RoleManagement: React.FC = () => {
         if (rolesError) {
           console.error('Error fetching roles:', rolesError);
           toast.error('Failed to load roles');
-        } else {
+        } else if (rolesData) {
           const formattedRoles = rolesData.map((role) => ({
             ...role,
             permissions: role.permissions as Permission[]
@@ -178,6 +177,8 @@ const RoleManagement: React.FC = () => {
           .single();
           
         if (error) throw error;
+        if (!data) throw new Error('No data returned from update');
+        
         result = data;
         
         // Update local state
@@ -196,6 +197,8 @@ const RoleManagement: React.FC = () => {
           .single();
           
         if (error) throw error;
+        if (!data) throw new Error('No data returned from insert');
+        
         result = data;
         
         // Update local state

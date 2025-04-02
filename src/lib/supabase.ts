@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
 
 // Re-export for convenience
 export type { Session, User } from '@supabase/supabase-js';
@@ -264,6 +265,10 @@ export const createTransaction = async (transaction: any, entries: any[]) => {
     if (transactionError) {
       console.error('Error creating transaction:', transactionError);
       throw transactionError;
+    }
+    
+    if (!transactionData) {
+      throw new Error('No transaction data returned after insert');
     }
     
     // Then, create the transaction entries

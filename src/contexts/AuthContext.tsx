@@ -94,6 +94,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               return;
             }
 
+            // Make sure the data is of the right shape
+            const roleData = userRoles.roles;
+            
             // Map DB role to our format
             const userWithRole: AuthUser = {
               id: userData.id,
@@ -101,9 +104,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: currentSession.user.email || '',
               roleId: userRoles.role_id,
               role: {
-                id: userRoles.roles.id,
-                name: userRoles.roles.name,
-                permissions: userRoles.roles.permissions as Permission[]
+                id: roleData.id,
+                name: roleData.name,
+                permissions: roleData.permissions as Permission[]
               }
             };
             
