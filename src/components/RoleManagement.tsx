@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth, Permission } from '@/contexts/AuthContext';
 
-// Define types
 type Role = {
   id: string;
   name: string;
@@ -39,7 +37,6 @@ type User = {
   active: boolean;
 };
 
-// Define permission options
 const permissionsList: { id: Permission; name: string; description: string }[] = [
   { id: 'create_entry', name: 'Create Entry', description: 'Can create new entries' },
   { id: 'edit_entry', name: 'Edit Entry', description: 'Can edit existing entries' },
@@ -62,24 +59,19 @@ const RoleManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   
-  // Role dialog state
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [currentRole, setCurrentRole] = useState<Role | null>(null);
   
-  // User dialog state
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
-  // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'role' | 'user', id: string } | null>(null);
 
-  // Fetch roles and users from Supabase
   useEffect(() => {
     const fetchRolesAndUsers = async () => {
       setLoading(true);
       try {
-        // Fetch roles
         const { data: rolesData, error: rolesError } = await supabase
           .from('roles')
           .select('*');
@@ -95,64 +87,43 @@ const RoleManagement: React.FC = () => {
           setRoles(formattedRoles);
         }
         
-        // Fetch users with their roles - updated query with proper join strategy
         const { data: userData, error: userError } = await supabase
           .from('profiles')
           .select(`
             id,
             name,
-            user_roles!inner (role_id)
+            user_roles!inner (
+              role_id,
+              roles (
+                id,
+                name
+              )
+            ),
+            auth.users!id (
+              email,
+              is_active
+            )
           `);
         
         if (userError) {
           console.error('Error fetching users:', userError);
           toast.error('Failed to load users');
         } else if (userData) {
-          // Now get email data separately to avoid nested query issues
-          const userIds = userData.map(user => user.id);
-          
-          // Get all user roles to map them
-          const { data: userRolesData } = await supabase
-            .from('user_roles')
-            .select('user_id, role_id')
-            .in('user_id', userIds);
-            
-          // Get user emails from auth
-          const { data: authData } = await supabase.auth.admin.listUsers();
-          const emailMap = new Map();
-          
-          if (authData) {
-            authData.users.forEach(user => {
-              emailMap.set(user.id, {
-                email: user.email || '',
-                active: !user.banned
-              });
-            });
-          }
-          
-          // Map user roles to users
-          const roleMap = new Map();
-          if (userRolesData) {
-            userRolesData.forEach(ur => {
-              roleMap.set(ur.user_id, ur.role_id);
-            });
-          }
-          
-          // Transform the data structure
-          const formattedUsers = userData.map((user) => {
-            const userAuth = emailMap.get(user.id) || { email: '', active: true };
-            const role_id = roleMap.get(user.id) || '';
+          const processedUsers = userData?.map(user => {
+            const authUser = user['auth.users'];
+            const userRole = user.user_roles[0];
             
             return {
               id: user.id,
+              email: authUser ? authUser.email : '',
               name: user.name || '',
-              email: userAuth.email,
-              role_id: role_id,
-              active: userAuth.active
+              roleId: userRole ? userRole.role_id : '',
+              roleName: userRole && userRole.roles ? userRole.roles.name : '',
+              active: authUser ? authUser.is_active : false
             };
-          });
+          }) || [];
           
-          setUsers(formattedUsers);
+          setUsers(processedUsers);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -165,7 +136,6 @@ const RoleManagement: React.FC = () => {
     fetchRolesAndUsers();
   }, []);
 
-  // Role handlers
   const handleAddRole = () => {
     setCurrentRole({
       id: '',
@@ -191,7 +161,6 @@ const RoleManagement: React.FC = () => {
       let result;
       
       if (role.id) {
-        // Update existing role
         const { data, error } = await supabase
           .from('roles')
           .update({ 
@@ -208,11 +177,9 @@ const RoleManagement: React.FC = () => {
         
         result = data;
         
-        // Update local state
         setRoles(roles.map(r => r.id === role.id ? { ...result, permissions: result.permissions as Permission[] } : r));
         toast.success(`Role ${role.name} updated successfully`);
       } else {
-        // Create new role
         const { data, error } = await supabase
           .from('roles')
           .insert({ 
@@ -228,7 +195,6 @@ const RoleManagement: React.FC = () => {
         
         result = data;
         
-        // Update local state
         setRoles([...roles, { ...result, permissions: result.permissions as Permission[] }]);
         toast.success(`Role ${role.name} created successfully`);
       }
@@ -241,7 +207,6 @@ const RoleManagement: React.FC = () => {
     }
   };
 
-  // User handlers
   const handleAddUser = () => {
     setCurrentUser({
       id: '',
@@ -266,7 +231,6 @@ const RoleManagement: React.FC = () => {
 
     try {
       if (user.id) {
-        // Update existing user's role
         const { error: roleError } = await supabase
           .from('user_roles')
           .update({ role_id: user.role_id })
@@ -274,7 +238,6 @@ const RoleManagement: React.FC = () => {
           
         if (roleError) throw roleError;
         
-        // Update profile
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ name: user.name })
@@ -282,12 +245,9 @@ const RoleManagement: React.FC = () => {
           
         if (profileError) throw profileError;
         
-        // Update local state
         setUsers(users.map(u => u.id === user.id ? user : u));
         toast.success(`User ${user.name} updated successfully`);
       } else {
-        // Creating new users would require admin access to auth API
-        // This should be handled through an edge function
         toast.error('Creating new users directly is not supported. Please invite users through Supabase admin panel.');
         return;
       }
@@ -302,11 +262,8 @@ const RoleManagement: React.FC = () => {
 
   const handleToggleUserActive = async (userId: string, active: boolean) => {
     try {
-      // Toggling user active status would require admin access to auth API
-      // This should be handled through an edge function
       toast.info('Toggling user active status is not implemented in this demo.');
       
-      // Update local state for the demo
       setUsers(
         users.map((user) => {
           if (user.id === userId) {
@@ -321,7 +278,6 @@ const RoleManagement: React.FC = () => {
     }
   };
 
-  // Delete handlers
   const handleRequestDelete = (type: 'role' | 'user', id: string) => {
     setItemToDelete({ type, id });
     setDeleteDialogOpen(true);
@@ -332,7 +288,6 @@ const RoleManagement: React.FC = () => {
 
     try {
       if (itemToDelete.type === 'role') {
-        // Check if any users are using this role
         const { data: usersWithRole, error: checkError } = await supabase
           .from('user_roles')
           .select('user_id')
@@ -347,7 +302,6 @@ const RoleManagement: React.FC = () => {
           return;
         }
 
-        // Delete role
         const { error } = await supabase
           .from('roles')
           .delete()
@@ -355,12 +309,9 @@ const RoleManagement: React.FC = () => {
           
         if (error) throw error;
         
-        // Update local state
         setRoles(roles.filter((role) => role.id !== itemToDelete.id));
         toast.success("Role deleted successfully");
       } else {
-        // Deleting users would require admin access to auth API
-        // This should be handled through an edge function
         toast.error('Deleting users directly is not supported in this demo.');
         return;
       }
@@ -447,7 +398,7 @@ const RoleManagement: React.FC = () => {
                         <Button variant="ghost" size="icon" onClick={() => handleEditRole(role)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        {role.name !== 'Super Admin' && ( // Prevent deleting Super Admin
+                        {role.name !== 'Super Admin' && (
                           <Button variant="ghost" size="icon" onClick={() => handleRequestDelete('role', role.id)}>
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
@@ -505,7 +456,7 @@ const RoleManagement: React.FC = () => {
                           <Button variant="ghost" size="icon" onClick={() => handleEditUser(userData)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          {userData.id !== user?.id && ( // Prevent deleting current user
+                          {userData.id !== user?.id && (
                             <Button variant="ghost" size="icon" onClick={() => handleRequestDelete('user', userData.id)}>
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
@@ -521,7 +472,6 @@ const RoleManagement: React.FC = () => {
         </Card>
       )}
 
-      {/* Role Dialog */}
       <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
           <DialogHeader>
@@ -599,7 +549,6 @@ const RoleManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* User Dialog */}
       <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -624,7 +573,7 @@ const RoleManagement: React.FC = () => {
                   value={currentUser.email}
                   onChange={(e) => setCurrentUser({ ...currentUser, email: e.target.value })}
                   placeholder="Enter user email"
-                  disabled={!!currentUser.id} // Can't edit email of existing users
+                  disabled={!!currentUser.id}
                 />
               </div>
               <div>
@@ -670,7 +619,6 @@ const RoleManagement: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

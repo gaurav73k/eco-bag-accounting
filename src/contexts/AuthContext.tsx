@@ -72,7 +72,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Fetch user details including role
             const { data: userRoles, error: userRolesError } = await supabase
               .from('user_roles')
-              .select('role_id, roles(*)')
+              .select(`
+                role_id,
+                roles (
+                  id, name, permissions
+                )
+              `)
               .eq('user_id', currentSession.user.id)
               .single();
             
@@ -94,19 +99,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               return;
             }
 
-            // Make sure the data is of the right shape
-            const roleData = userRoles.roles;
-            
-            // Map DB role to our format
+            // Create user with role data
             const userWithRole: AuthUser = {
               id: userData.id,
               name: userData.name || currentSession.user.email?.split('@')[0] || '',
               email: currentSession.user.email || '',
               roleId: userRoles.role_id,
               role: {
-                id: roleData.id,
-                name: roleData.name,
-                permissions: roleData.permissions as Permission[]
+                id: userRoles.roles.id,
+                name: userRoles.roles.name,
+                permissions: userRoles.roles.permissions as Permission[]
               }
             };
             

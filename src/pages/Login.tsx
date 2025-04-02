@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -26,6 +25,7 @@ const Login: React.FC = () => {
   // Redirect authenticated users
   useEffect(() => {
     if (isAuthenticated && !loading) {
+      console.log("User is authenticated, redirecting to home");
       const from = location.state?.from?.pathname || '/';
       navigate(from, { replace: true });
     }
@@ -49,6 +49,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
     
     try {
+      console.log("Attempting login with:", email);
       const success = await login(email, password);
       
       if (!success) {
@@ -69,6 +70,8 @@ const Login: React.FC = () => {
         } else {
           toast.error(`Login failed. ${5 - attempts} attempts remaining before lockout.`);
         }
+      } else {
+        console.log("Login successful!");
       }
     } catch (error) {
       console.error('Login error:', error);

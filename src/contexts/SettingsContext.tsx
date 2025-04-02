@@ -47,9 +47,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         const data = await getAppSettings();
         
         if (data) {
-          setSettings(data as AppSettings);
+          setSettings(data);
           // Apply settings to the UI
-          applyTheme(data as AppSettings);
+          applyTheme(data);
         } else {
           // If no settings in DB, use defaults
           setSettings(defaultSettings);

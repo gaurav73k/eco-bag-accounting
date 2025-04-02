@@ -15,7 +15,7 @@ export const getCurrentUser = async () => {
 // Settings related functions
 export const getAppSettings = async () => {
   try {
-    // Use type casting here since app_settings is newly created and might not be in the types yet
+    // Cast to any since app_settings might not be in the generated types yet
     const { data, error } = await supabase
       .from('app_settings')
       .select('*')
@@ -26,16 +26,16 @@ export const getAppSettings = async () => {
       return null;
     }
     
-    return data;
+    return data as unknown as AppSettings;
   } catch (err) {
     console.error('Error in getAppSettings:', err);
     return null;
   }
 };
 
-export const updateAppSettings = async (settings: any) => {
+export const updateAppSettings = async (settings: Partial<AppSettings>) => {
   try {
-    // Use type casting here since app_settings is newly created and might not be in the types yet
+    // Cast to any since app_settings might not be in the generated types yet
     const { data, error } = await supabase
       .from('app_settings')
       .upsert(settings)
@@ -47,7 +47,7 @@ export const updateAppSettings = async (settings: any) => {
       throw error;
     }
     
-    return data;
+    return data as unknown as AppSettings;
   } catch (err) {
     console.error('Error in updateAppSettings:', err);
     throw err;
