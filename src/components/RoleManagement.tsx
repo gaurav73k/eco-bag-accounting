@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ const RoleManagement: React.FC = () => {
     const fetchRolesAndUsers = async () => {
       setLoading(true);
       try {
+        // Fetch roles
         const { data: rolesData, error: rolesError } = await supabase
           .from('roles')
           .select('*');
@@ -87,21 +89,18 @@ const RoleManagement: React.FC = () => {
           setRoles(formattedRoles);
         }
         
+        // Fetch users with their roles - Fix query structure
         const { data: userData, error: userError } = await supabase
           .from('profiles')
           .select(`
             id,
             name,
-            user_roles!inner (
+            user_roles (
               role_id,
               roles (
                 id,
                 name
               )
-            ),
-            auth.users!id (
-              email,
-              is_active
             )
           `);
         
@@ -109,19 +108,25 @@ const RoleManagement: React.FC = () => {
           console.error('Error fetching users:', userError);
           toast.error('Failed to load users');
         } else if (userData) {
-          const processedUsers = userData?.map(user => {
-            const authUser = user['auth.users'];
-            const userRole = user.user_roles[0];
+          // Get emails from auth.users separately (can't join directly due to schema separation)
+          const { data: authUsersData, error: authError } = await supabase.auth.admin.listUsers();
+          const authUsers = authError ? [] : authUsersData?.users || [];
+          
+          // Process users with their roles and auth info
+          const processedUsers: User[] = userData.map(profile => {
+            // Find corresponding auth user
+            const authUser = authUsers.find(au => au.id === profile.id);
+            // Get user role info
+            const userRole = profile.user_roles?.[0];
             
             return {
-              id: user.id,
-              email: authUser ? authUser.email : '',
-              name: user.name || '',
-              roleId: userRole ? userRole.role_id : '',
-              roleName: userRole && userRole.roles ? userRole.roles.name : '',
-              active: authUser ? authUser.is_active : false
+              id: profile.id,
+              name: profile.name || '',
+              email: authUser?.email || '',
+              role_id: userRole?.role_id || '',
+              active: authUser?.app_metadata?.is_active !== false // Default to active if not specified
             };
-          }) || [];
+          });
           
           setUsers(processedUsers);
         }

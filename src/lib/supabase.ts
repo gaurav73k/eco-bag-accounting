@@ -15,7 +15,7 @@ export const getCurrentUser = async () => {
 // Settings related functions
 export const getAppSettings = async () => {
   try {
-    // Cast to any since app_settings might not be in the generated types yet
+    // Cast the result since the app_settings table might not be in the generated types yet
     const { data, error } = await supabase
       .from('app_settings')
       .select('*')
@@ -35,7 +35,7 @@ export const getAppSettings = async () => {
 
 export const updateAppSettings = async (settings: Partial<AppSettings>) => {
   try {
-    // Cast to any since app_settings might not be in the generated types yet
+    // Cast the result since the app_settings table might not be in the generated types yet
     const { data, error } = await supabase
       .from('app_settings')
       .upsert(settings)

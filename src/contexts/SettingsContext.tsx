@@ -47,9 +47,11 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         const data = await getAppSettings();
         
         if (data) {
-          setSettings(data);
+          // Ensure the data matches our AppSettings type
+          const typedSettings: AppSettings = data as AppSettings;
+          setSettings(typedSettings);
           // Apply settings to the UI
-          applyTheme(data);
+          applyTheme(typedSettings);
         } else {
           // If no settings in DB, use defaults
           setSettings(defaultSettings);
@@ -67,13 +69,15 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const updateSettings = async (newSettings: Partial<AppSettings>) => {
     try {
+      if (!settings) return;
+      
       const updatedSettings = { ...settings, ...newSettings };
-      setSettings(updatedSettings as AppSettings);
       
-      // Apply the settings to the UI immediately
-      applyTheme(updatedSettings as AppSettings);
+      // First update the UI immediately for a responsive feel
+      setSettings(updatedSettings);
+      applyTheme(updatedSettings);
       
-      // Update in the database
+      // Then update in the database
       await updateAppSettings(updatedSettings);
       toast.success('Settings updated successfully');
     } catch (error) {
