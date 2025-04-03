@@ -56,22 +56,15 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
         Footer: (props) => {
-          // We need to access the DayPicker's context to get the selected date
-          // Instead of trying to access 'selected' directly from props
-          // We'll check if the parent component passed selected date via props
-          const selectedDate = props.displayMonth || (props as any).selected;
+          // Fixed: Getting the correct date from props safely
+          const selectedDate = props.displayMonth;
           
-          // Create a date to display, defaulting to the displayed month if no selection
-          const dateToDisplay = Array.isArray(selectedDate) 
-            ? selectedDate[0] 
-            : selectedDate;
-          
-          if (!dateToDisplay) return null;
+          if (!selectedDate) return null;
           
           return (
             <div className="px-4 pt-1 pb-2">
               <p className="text-xs text-muted-foreground text-center">
-                {dateToDisplay.toDateString()}
+                {selectedDate.toDateString()}
               </p>
             </div>
           );
