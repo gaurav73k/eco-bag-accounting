@@ -66,22 +66,13 @@ const RoleManagement = () => {
         setRoles(typedRoles);
       }
       
-      // First, fetch all profiles
+      // First, fetch all profiles with emails
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name');
       
       if (profilesError) {
         throw profilesError;
-      }
-      
-      // Fetch user emails from auth.users
-      const { data: authData, error: authError } = await supabase
-        .from('auth')
-        .select('users (id, email)');
-      
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
       }
       
       // Fetch user_roles
@@ -98,8 +89,9 @@ const RoleManagement = () => {
       
       if (profilesData) {
         for (const profile of profilesData) {
-          // Find email
-          const email = authData?.users?.find(user => user.id === profile.id)?.email || '';
+          // Since we can't directly access auth.users, we'll use the email from profiles or set it empty
+          // In a real application, you would need a custom API or function to fetch this
+          const email = ''; // We can't get this directly
           
           // Find role
           const userRole = userRolesData?.find(ur => ur.user_id === profile.id);

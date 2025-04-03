@@ -55,7 +55,11 @@ function Calendar({
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
-        Footer: ({ date }) => {
+        Footer: (props) => {
+          // Fix: Remove type casting and use directly the selected date from DayPicker context
+          const { selected } = props;
+          const date = Array.isArray(selected) ? selected[0] : selected;
+          
           if (!date) return null;
           return (
             <div className="px-4 pt-1 pb-2">

@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 interface NepaliDatePickerProps {
   value?: Date;
-  onChange: (date: Date) => void;
+  onChange: (date: Date | undefined) => void;
   className?: string;
   placeholder?: string;
   disabled?: boolean;
@@ -47,7 +47,6 @@ export function NepaliDatePicker({
           selected={value}
           onSelect={onChange}
           initialFocus
-          className="p-3 pointer-events-auto"
         />
       </PopoverContent>
     </Popover>
