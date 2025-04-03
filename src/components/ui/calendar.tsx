@@ -56,15 +56,22 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
         Footer: (props) => {
-          // Fix: Remove type casting and use directly the selected date from DayPicker context
-          const { selected } = props;
-          const date = Array.isArray(selected) ? selected[0] : selected;
+          // We need to access the DayPicker's context to get the selected date
+          // Instead of trying to access 'selected' directly from props
+          // We'll check if the parent component passed selected date via props
+          const selectedDate = props.displayMonth || (props as any).selected;
           
-          if (!date) return null;
+          // Create a date to display, defaulting to the displayed month if no selection
+          const dateToDisplay = Array.isArray(selectedDate) 
+            ? selectedDate[0] 
+            : selectedDate;
+          
+          if (!dateToDisplay) return null;
+          
           return (
             <div className="px-4 pt-1 pb-2">
               <p className="text-xs text-muted-foreground text-center">
-                {date.toDateString()}
+                {dateToDisplay.toDateString()}
               </p>
             </div>
           );
