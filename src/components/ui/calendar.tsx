@@ -56,15 +56,13 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
         Footer: (props) => {
-          // Fixed: Getting the correct date from props safely
-          const selectedDate = props.displayMonth;
-          
-          if (!selectedDate) return null;
+          // Fixed: Getting the correct date safely
+          const displayDate = props.displayMonth || new Date();
           
           return (
             <div className="px-4 pt-1 pb-2">
               <p className="text-xs text-muted-foreground text-center">
-                {selectedDate.toDateString()}
+                {displayDate.toDateString()}
               </p>
             </div>
           );

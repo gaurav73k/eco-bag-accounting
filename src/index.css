@@ -14,6 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
+    /* Ensure primary color is visible - adjusted for a vibrant green */
     --primary: 142 76% 36%;
     --primary-foreground: 355 100% 100%;
 
@@ -35,6 +36,15 @@
 
     --radius: 0.75rem;
 
+    /* Adding HSL variables for primary and secondary colors */
+    --primary-hue: 142;
+    --primary-saturation: 76%;
+    --primary-lightness: 36%;
+
+    --secondary-hue: 240;
+    --secondary-saturation: 4.8%;
+    --secondary-lightness: 95.9%;
+
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 10% 3.9%;
     --sidebar-primary: 142 76% 36%;
@@ -55,6 +65,7 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
+    /* Ensure primary color is visible in dark mode */
     --primary: 142 70% 45%;
     --primary-foreground: 355 100% 100%;
 
@@ -73,6 +84,15 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 142 70% 45%;
+
+    /* Adding HSL variables for primary and secondary colors in dark mode */
+    --primary-hue: 142;
+    --primary-saturation: 70%;
+    --primary-lightness: 45%;
+
+    --secondary-hue: 240;
+    --secondary-saturation: 3.7%;
+    --secondary-lightness: 15.9%;
 
     --sidebar-background: 240 10% 3.9%;
     --sidebar-foreground: 0 0% 98%;
@@ -115,6 +135,17 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+}
+
+/* Improve button visibility */
+button.bg-primary {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+button.bg-green-500 {
+  background-color: #22c55e !important;
+  color: white !important;
 }
 
 /* Smooth scrolling */
