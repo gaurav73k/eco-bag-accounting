@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { toNepaliBS, fromNepaliBS, formatNepaliBS, getCurrentNepaliDate } from "@/utils/nepaliDateConverter";
 
 interface NepaliDatePickerProps {
   value?: Date;
@@ -23,8 +22,8 @@ export function NepaliDatePicker({
   placeholder = "Select date",
   disabled = false,
 }: NepaliDatePickerProps) {
-  // Convert the Gregorian date to Nepali BS format for display
-  const displayValue = value ? formatNepaliBS(toNepaliBS(value)) : undefined;
+  // Format the date for display
+  const displayValue = value ? format(value, "PPP") : undefined;
 
   return (
     <Popover>
@@ -50,13 +49,6 @@ export function NepaliDatePicker({
           initialFocus
           className="p-3 pointer-events-auto"
         />
-        <div className="p-3 border-t border-border">
-          <div className="text-xs text-muted-foreground">
-            {value && (
-              <p>Nepali Date: {formatNepaliBS(toNepaliBS(value))}</p>
-            )}
-          </div>
-        </div>
       </PopoverContent>
     </Popover>
   );

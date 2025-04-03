@@ -1,6 +1,4 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { getCurrentFiscalYear, getFiscalYearOptions, isValidBSDate, formatNepaliBS } from '@/utils/nepaliDateConverter';
 import { toast } from 'sonner';
 
 type FiscalYearContextType = {
@@ -23,9 +21,25 @@ export const useFiscalYear = () => {
   return context;
 };
 
+// Get current fiscal year in Gregorian format
+const getCurrentFiscalYear = (): string => {
+  const now = new Date();
+  // In Nepal, fiscal year starts in July (month index 6)
+  // If current month is July or later, fiscal year is current year/next year
+  // Otherwise it's previous year/current year
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  
+  if (currentMonth >= 6) { // July or later
+    return `${currentYear}/${currentYear + 1}`;
+  } else {
+    return `${currentYear - 1}/${currentYear}`;
+  }
+};
+
 export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
   const currentFiscalYear = getCurrentFiscalYear();
-  console.log("Current Nepali fiscal year:", currentFiscalYear);
+  console.log("Current Gregorian fiscal year:", currentFiscalYear);
   
   const storedFiscalYear = localStorage.getItem('selectedFiscalYear');
   const [fiscalYear, setFiscalYearState] = useState(storedFiscalYear || currentFiscalYear);
@@ -40,7 +54,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         return [currentFiscalYear];
       }
     } else {
-      // Default to current fiscal year and previous fiscal year in Nepali format
+      // Default to current fiscal year and previous fiscal year in Gregorian format
       const [currentYear] = currentFiscalYear.split('/').map(Number);
       return [
         currentFiscalYear,
@@ -59,7 +73,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
   const addFiscalYear = (year: string): boolean => {
     if (!year) return false;
     
-    // Validate Nepali fiscal year format: YYYY/YYYY
+    // Validate fiscal year format: YYYY/YYYY
     if (!year.match(/^\d{4}\/\d{4}$/)) {
       toast.error('Fiscal year must be in format YYYY/YYYY');
       return false;
@@ -85,7 +99,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
     
     setAvailableFiscalYears(updatedYears);
     localStorage.setItem('fiscalYears', JSON.stringify(updatedYears));
-    toast.success(`Added fiscal year ${year} BS`);
+    toast.success(`Added fiscal year ${year}`);
     return true;
   };
   
@@ -100,14 +114,14 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
     const updatedYears = availableFiscalYears.filter(y => y !== year);
     setAvailableFiscalYears(updatedYears);
     localStorage.setItem('fiscalYears', JSON.stringify(updatedYears));
-    toast.success(`Deleted fiscal year ${year} BS`);
+    toast.success(`Deleted fiscal year ${year}`);
     return true;
   };
 
   const isCurrentFiscalYear = fiscalYear === currentFiscalYear;
   
-  // Format the fiscal year for display (add BS notation)
-  const formattedFiscalYear = `${fiscalYear} BS`;
+  // Format the fiscal year for display (no BS notation)
+  const formattedFiscalYear = fiscalYear;
   
   useEffect(() => {
     localStorage.setItem('fiscalYears', JSON.stringify(availableFiscalYears));

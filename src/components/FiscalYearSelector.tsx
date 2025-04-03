@@ -49,7 +49,7 @@ const FiscalYearSelector = () => {
     setFiscalYear(localFiscalYear);
     localStorage.setItem('hasSelectedFiscalYear', 'true');
     setIsOpen(false);
-    toast.success(`Fiscal year set to ${localFiscalYear} BS`);
+    toast.success(`Fiscal year set to ${localFiscalYear}`);
   };
   
   const handleAddNewYear = () => {
@@ -58,7 +58,7 @@ const FiscalYearSelector = () => {
       return;
     }
     
-    // Basic validation for YYYY/YYYY format (Nepali years)
+    // Basic validation for YYYY/YYYY format
     if (!newFiscalYear.match(/^\d{4}\/\d{4}$/)) {
       toast.error('Fiscal year must be in format YYYY/YYYY');
       return;
@@ -119,7 +119,7 @@ const FiscalYearSelector = () => {
                 <SelectContent>
                   {availableFiscalYears.map((year) => (
                     <SelectItem key={year} value={year}>
-                      {year} BS
+                      {year}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -144,7 +144,7 @@ const FiscalYearSelector = () => {
                       <TableBody>
                         {availableFiscalYears.map((year) => (
                           <TableRow key={year}>
-                            <TableCell>{year} BS</TableCell>
+                            <TableCell>{year}</TableCell>
                             <TableCell className="text-right">
                               <Button
                                 variant="ghost"
@@ -192,19 +192,19 @@ const FiscalYearSelector = () => {
           <DialogHeader>
             <DialogTitle>Add New Fiscal Year</DialogTitle>
             <DialogDescription>
-              Enter the fiscal year in YYYY/YYYY format (Nepali year).
+              Enter the fiscal year in YYYY/YYYY format.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Label htmlFor="new-fiscal-year">Fiscal Year</Label>
             <Input
               id="new-fiscal-year"
-              placeholder="e.g. 2081/2082"
+              placeholder="e.g. 2023/2024"
               value={newFiscalYear}
               onChange={(e) => setNewFiscalYear(e.target.value)}
             />
             <p className="text-xs text-muted-foreground mt-2">
-              Example: 2081/2082 for Nepali fiscal year 2081/2082 BS
+              Example: 2023/2024 for Gregorian fiscal year 2023/2024
             </p>
           </div>
           <DialogFooter>
@@ -224,7 +224,7 @@ const FiscalYearSelector = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Fiscal Year</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete fiscal year {yearToDelete} BS? This action cannot be undone.
+              Are you sure you want to delete fiscal year {yearToDelete}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
