@@ -1,7 +1,7 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, DayPickerRangeProps, DayPickerSingleProps } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -56,13 +56,26 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
         Footer: (props) => {
-          // Fixed: Getting the correct date safely
+          // Safely get the displayDate from props
           const displayDate = props.displayMonth || new Date();
+          
+          // Get the selected date if available
+          let selectedDate: Date | undefined;
+          
+          // Try to access selected date based on single or range selection
+          if ('selected' in props) {
+            selectedDate = (props as DayPickerSingleProps).selected;
+          } else if ('range' in props && (props as DayPickerRangeProps).range) {
+            const range = (props as DayPickerRangeProps).range;
+            selectedDate = range?.from;
+          }
+          
+          const dateToDisplay = selectedDate || displayDate;
           
           return (
             <div className="px-4 pt-1 pb-2">
               <p className="text-xs text-muted-foreground text-center">
-                {displayDate.toDateString()}
+                {dateToDisplay.toDateString()}
               </p>
             </div>
           );

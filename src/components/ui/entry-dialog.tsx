@@ -1,5 +1,5 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { useHistory } from '@/hooks/use-history';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { toast } from 'sonner';
 
 interface EntryDialogProps {
@@ -61,6 +62,14 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
 
   const { addHistoryEntry } = useHistory();
   const { hasPermission } = useAuth();
+  const { fiscalYear } = useFiscalYear();
+
+  // Display current fiscal year in the dialog
+  useEffect(() => {
+    if (isCreate && isOpen) {
+      console.log(`Creating new entry in fiscal year: ${fiscalYear}`);
+    }
+  }, [isOpen, isCreate, fiscalYear]);
 
   const handleSave = () => {
     if (onSave) {
@@ -73,7 +82,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
           entityType, 
           entityId || `new-${Date.now()}`, 
           entityName,
-          `Created new ${entityType} entry`
+          `Created new ${entityType} entry in fiscal year ${fiscalYear}`
         );
         toast.success(`Created ${entityName} successfully`);
       } else if (isEdit && entityName) {
@@ -82,7 +91,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
           entityType, 
           entityId, 
           entityName,
-          `Updated ${entityType} entry details`
+          `Updated ${entityType} entry details in fiscal year ${fiscalYear}`
         );
         toast.success(`Updated ${entityName} successfully`);
       }
@@ -101,7 +110,12 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
         <DialogHeader className="flex flex-row items-center justify-between">
           <div>
             <DialogTitle>{title}</DialogTitle>
-            {description && <DialogDescription>{description}</DialogDescription>}
+            {description && (
+              <DialogDescription>
+                {description}
+                {isCreate && <span className="ml-1 text-primary font-medium">({fiscalYear})</span>}
+              </DialogDescription>
+            )}
           </div>
           {showCloseButton && (
             <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">

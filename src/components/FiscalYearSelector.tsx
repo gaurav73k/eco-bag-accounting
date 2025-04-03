@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Calendar, Plus, Trash2, X } from 'lucide-react';
+import { Calendar, Plus, Trash2, X, Check, FileEdit } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   AlertDialog,
@@ -21,9 +21,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { format } from 'date-fns';
 
 const FiscalYearSelector = () => {
-  const { fiscalYear, setFiscalYear, formattedFiscalYear } = useFiscalYear();
+  const { 
+    fiscalYear, 
+    setFiscalYear, 
+    formattedFiscalYear, 
+    availableFiscalYears, 
+    addFiscalYear, 
+    deleteFiscalYear,
+    fiscalYearData,
+    loading 
+  } = useFiscalYear();
+  
   const { hasPermission } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [newFiscalYear, setNewFiscalYear] = useState('');
@@ -31,8 +42,8 @@ const FiscalYearSelector = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [yearToDelete, setYearToDelete] = useState('');
-  
-  const { availableFiscalYears, addFiscalYear, deleteFiscalYear } = useFiscalYear();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [fiscalYearToEdit, setFiscalYearToEdit] = useState('');
   
   const canManageFiscalYear = hasPermission('manage_fiscal_year');
   
@@ -45,6 +56,12 @@ const FiscalYearSelector = () => {
     }
   }, []);
   
+  useEffect(() => {
+    if (fiscalYear) {
+      setLocalFiscalYear(fiscalYear);
+    }
+  }, [fiscalYear]);
+  
   const handleSaveFiscalYear = () => {
     setFiscalYear(localFiscalYear);
     localStorage.setItem('hasSelectedFiscalYear', 'true');
@@ -52,7 +69,7 @@ const FiscalYearSelector = () => {
     toast.success(`Fiscal year set to ${localFiscalYear}`);
   };
   
-  const handleAddNewYear = () => {
+  const handleAddNewYear = async () => {
     if (!newFiscalYear) {
       toast.error('Please enter a valid fiscal year');
       return;
@@ -65,16 +82,28 @@ const FiscalYearSelector = () => {
     }
     
     // Add the fiscal year
-    if (addFiscalYear(newFiscalYear)) {
+    const success = await addFiscalYear(newFiscalYear);
+    if (success) {
       setNewFiscalYear('');
       setIsAddDialogOpen(false);
     }
   };
   
-  const handleDeleteYear = () => {
+  const handleDeleteYear = async () => {
     if (!yearToDelete) return;
-    deleteFiscalYear(yearToDelete);
-    setIsDeleteConfirmOpen(false);
+    const success = await deleteFiscalYear(yearToDelete);
+    if (success) {
+      setIsDeleteConfirmOpen(false);
+    }
+  };
+
+  // Format dates for display
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM dd, yyyy');
+    } catch (e) {
+      return 'Invalid date';
+    }
   };
 
   return (
@@ -105,81 +134,102 @@ const FiscalYearSelector = () => {
           </DialogHeader>
           
           <div className="py-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="fiscal-year" className="text-right">
-                Current Fiscal Year
-              </Label>
-              <Select
-                value={localFiscalYear}
-                onValueChange={setLocalFiscalYear}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select fiscal year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableFiscalYears.map((year) => (
-                    <SelectItem key={year} value={year}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {canManageFiscalYear && (
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-base">Manage Fiscal Years</CardTitle>
-                  <CardDescription>Add or remove fiscal years</CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="max-h-40 overflow-y-auto mb-2">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Fiscal Year</TableHead>
-                          <TableHead className="text-right w-[80px]">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {availableFiscalYears.map((year) => (
-                          <TableRow key={year}>
-                            <TableCell>{year}</TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => {
-                                  setYearToDelete(year);
-                                  setIsDeleteConfirmOpen(true);
-                                }}
-                                disabled={year === fiscalYear}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2"
-                    onClick={() => setIsAddDialogOpen(true)}
+            {loading ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="fiscal-year" className="text-right">
+                    Current Fiscal Year
+                  </Label>
+                  <Select
+                    value={localFiscalYear}
+                    onValueChange={setLocalFiscalYear}
                   >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add New Fiscal Year
-                  </Button>
-                </CardContent>
-              </Card>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select fiscal year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableFiscalYears.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {fiscalYearData && (
+                  <div className="p-3 bg-muted/30 rounded-md text-sm">
+                    <p><strong>Start Date:</strong> {formatDate(fiscalYearData.start_date)}</p>
+                    <p><strong>End Date:</strong> {formatDate(fiscalYearData.end_date)}</p>
+                    <p><strong>Status:</strong> {fiscalYearData.is_active ? 
+                      <span className="text-green-600 font-medium">Active</span> : 
+                      <span className="text-muted-foreground">Inactive</span>}
+                    </p>
+                  </div>
+                )}
+                
+                {canManageFiscalYear && (
+                  <Card>
+                    <CardHeader className="p-4 pb-2">
+                      <CardTitle className="text-base">Manage Fiscal Years</CardTitle>
+                      <CardDescription>Add or remove fiscal years</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <div className="max-h-40 overflow-y-auto mb-2">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Fiscal Year</TableHead>
+                              <TableHead className="text-right w-[100px]">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {availableFiscalYears.map((year) => (
+                              <TableRow key={year}>
+                                <TableCell>{year}</TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() => {
+                                        setYearToDelete(year);
+                                        setIsDeleteConfirmOpen(true);
+                                      }}
+                                      disabled={year === fiscalYear}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => setIsAddDialogOpen(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add New Fiscal Year
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
           </div>
           
           <DialogFooter>
-            <Button type="submit" onClick={handleSaveFiscalYear}>
+            <Button type="submit" onClick={handleSaveFiscalYear} disabled={loading}>
               Save
             </Button>
           </DialogFooter>
