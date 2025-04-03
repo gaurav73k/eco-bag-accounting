@@ -5,6 +5,7 @@ import { DayPicker } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { toNepaliBS, formatNepaliBS } from "@/utils/nepaliDateConverter";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
@@ -14,6 +15,19 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  // Custom component to show Nepali date in the footer
+  const Footer = ({ date }: { date?: Date }) => {
+    if (!date) return null;
+    const nepaliDate = formatNepaliBS(toNepaliBS(date));
+    return (
+      <div className="px-4 pt-1 pb-2">
+        <p className="text-xs text-muted-foreground text-center">
+          {nepaliDate}
+        </p>
+      </div>
+    );
+  };
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -55,7 +69,9 @@ function Calendar({
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
+        Footer: ({ captionProps }) => <Footer date={captionProps?.activeMonth} />
       }}
+      footer={<Footer date={props.selected instanceof Date ? props.selected : undefined} />}
       {...props}
     />
   );

@@ -1,7 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { getCurrentNepaliDate, getCurrentFiscalYear } from './nepaliDateConverter';
+import { getCurrentNepaliDate, getCurrentFiscalYear, parseBSDate } from './nepaliDateConverter';
 
 /**
  * Check if essential database tables exist and have data
@@ -102,7 +101,7 @@ export const ensureUserRole = async (userId: string) => {
 };
 
 /**
- * Ensure fiscal years exist in the database
+ * Ensure fiscal years exist in the database using Nepali dates
  */
 export const setupFiscalYears = async () => {
   try {
@@ -121,6 +120,8 @@ export const setupFiscalYears = async () => {
       const currentFiscalYear = getCurrentFiscalYear();
       const [startYear, endYear] = currentFiscalYear.split('/').map(Number);
       
+      console.log(`Creating fiscal years with Nepali years ${startYear}/${endYear}`);
+      
       // Create current fiscal year
       const { error: insertError } = await supabase
         .from('fiscal_years')
@@ -128,7 +129,8 @@ export const setupFiscalYears = async () => {
           name: `${startYear}/${endYear}`,
           start_date: `${startYear}-04-01`, // Shrawan 1 (approximate)
           end_date: `${endYear}-03-31`,    // Chaitra end (approximate)
-          is_active: true
+          is_active: true,
+          is_nepali_date: true // Flag to indicate this is a Nepali date
         });
         
       if (insertError) {
@@ -143,7 +145,8 @@ export const setupFiscalYears = async () => {
           name: `${startYear-1}/${endYear-1}`,
           start_date: `${startYear-1}-04-01`, 
           end_date: `${endYear-1}-03-31`,    
-          is_active: false
+          is_active: false,
+          is_nepali_date: true // Flag to indicate this is a Nepali date
         });
         
       if (insertPreviousError) {
@@ -213,7 +216,7 @@ export const setupDefaultData = async () => {
       toast.success('Default roles created');
     }
     
-    // Setup fiscal years
+    // Setup fiscal years with Nepali dates
     await setupFiscalYears();
     
     return true;

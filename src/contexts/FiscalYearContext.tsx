@@ -10,7 +10,7 @@ type FiscalYearContextType = {
   availableFiscalYears: string[];
   addFiscalYear: (year: string) => boolean;
   deleteFiscalYear: (year: string) => boolean;
-  formattedFiscalYear: string; // Added formatted version for display
+  formattedFiscalYear: string;
 };
 
 const FiscalYearContext = createContext<FiscalYearContextType | undefined>(undefined);
@@ -25,6 +25,7 @@ export const useFiscalYear = () => {
 
 export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
   const currentFiscalYear = getCurrentFiscalYear();
+  console.log("Current Nepali fiscal year:", currentFiscalYear);
   
   const storedFiscalYear = localStorage.getItem('selectedFiscalYear');
   const [fiscalYear, setFiscalYearState] = useState(storedFiscalYear || currentFiscalYear);

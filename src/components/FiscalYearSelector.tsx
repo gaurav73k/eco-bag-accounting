@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const FiscalYearSelector = () => {
-  const { fiscalYear, setFiscalYear } = useFiscalYear();
+  const { fiscalYear, setFiscalYear, formattedFiscalYear } = useFiscalYear();
   const { hasPermission } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [newFiscalYear, setNewFiscalYear] = useState('');
@@ -32,11 +32,7 @@ const FiscalYearSelector = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [yearToDelete, setYearToDelete] = useState('');
   
-  const [availableFiscalYears, setAvailableFiscalYears] = useState<string[]>(() => {
-    const storedYears = localStorage.getItem('fiscalYears');
-    const defaultYears = ['2080/81', '2081/82'];
-    return storedYears ? JSON.parse(storedYears) : defaultYears;
-  });
+  const { availableFiscalYears, addFiscalYear, deleteFiscalYear } = useFiscalYear();
   
   const canManageFiscalYear = hasPermission('manage_fiscal_year');
   
@@ -53,7 +49,7 @@ const FiscalYearSelector = () => {
     setFiscalYear(localFiscalYear);
     localStorage.setItem('hasSelectedFiscalYear', 'true');
     setIsOpen(false);
-    toast.success(`Fiscal year set to ${localFiscalYear}`);
+    toast.success(`Fiscal year set to ${localFiscalYear} BS`);
   };
   
   const handleAddNewYear = () => {
@@ -62,41 +58,23 @@ const FiscalYearSelector = () => {
       return;
     }
     
-    // Basic validation
-    if (!newFiscalYear.match(/^\d{4}\/\d{2}$/)) {
-      toast.error('Fiscal year must be in format YYYY/YY');
+    // Basic validation for YYYY/YYYY format (Nepali years)
+    if (!newFiscalYear.match(/^\d{4}\/\d{4}$/)) {
+      toast.error('Fiscal year must be in format YYYY/YYYY');
       return;
     }
     
-    // Check if already exists
-    if (availableFiscalYears.includes(newFiscalYear)) {
-      toast.error('This fiscal year already exists');
-      return;
+    // Add the fiscal year
+    if (addFiscalYear(newFiscalYear)) {
+      setNewFiscalYear('');
+      setIsAddDialogOpen(false);
     }
-    
-    const updatedYears = [...availableFiscalYears, newFiscalYear].sort();
-    setAvailableFiscalYears(updatedYears);
-    localStorage.setItem('fiscalYears', JSON.stringify(updatedYears));
-    setNewFiscalYear('');
-    setIsAddDialogOpen(false);
-    toast.success(`Added fiscal year ${newFiscalYear}`);
   };
   
   const handleDeleteYear = () => {
     if (!yearToDelete) return;
-    
-    // Prevent deleting currently selected fiscal year
-    if (yearToDelete === fiscalYear) {
-      toast.error('Cannot delete currently active fiscal year');
-      setIsDeleteConfirmOpen(false);
-      return;
-    }
-    
-    const updatedYears = availableFiscalYears.filter(year => year !== yearToDelete);
-    setAvailableFiscalYears(updatedYears);
-    localStorage.setItem('fiscalYears', JSON.stringify(updatedYears));
+    deleteFiscalYear(yearToDelete);
     setIsDeleteConfirmOpen(false);
-    toast.success(`Deleted fiscal year ${yearToDelete}`);
   };
 
   return (
@@ -141,7 +119,7 @@ const FiscalYearSelector = () => {
                 <SelectContent>
                   {availableFiscalYears.map((year) => (
                     <SelectItem key={year} value={year}>
-                      {year}
+                      {year} BS
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -166,7 +144,7 @@ const FiscalYearSelector = () => {
                       <TableBody>
                         {availableFiscalYears.map((year) => (
                           <TableRow key={year}>
-                            <TableCell>{year}</TableCell>
+                            <TableCell>{year} BS</TableCell>
                             <TableCell className="text-right">
                               <Button
                                 variant="ghost"
@@ -214,19 +192,19 @@ const FiscalYearSelector = () => {
           <DialogHeader>
             <DialogTitle>Add New Fiscal Year</DialogTitle>
             <DialogDescription>
-              Enter the fiscal year in YYYY/YY format.
+              Enter the fiscal year in YYYY/YYYY format (Nepali year).
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Label htmlFor="new-fiscal-year">Fiscal Year</Label>
             <Input
               id="new-fiscal-year"
-              placeholder="e.g. 2082/83"
+              placeholder="e.g. 2081/2082"
               value={newFiscalYear}
               onChange={(e) => setNewFiscalYear(e.target.value)}
             />
             <p className="text-xs text-muted-foreground mt-2">
-              Example: 2082/83 for Nepali fiscal year 2082/83
+              Example: 2081/2082 for Nepali fiscal year 2081/2082 BS
             </p>
           </div>
           <DialogFooter>
@@ -246,7 +224,7 @@ const FiscalYearSelector = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Fiscal Year</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete fiscal year {yearToDelete}? This action cannot be undone.
+              Are you sure you want to delete fiscal year {yearToDelete} BS? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
