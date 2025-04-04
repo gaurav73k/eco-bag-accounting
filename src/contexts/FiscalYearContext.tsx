@@ -28,12 +28,11 @@ export const useFiscalYear = () => {
   return context;
 };
 
-// Get current fiscal year in Gregorian format
+// Get current fiscal year
 const getCurrentFiscalYear = (): string => {
   const now = new Date();
-  // In Nepal, fiscal year starts in July (month index 6)
-  // If current month is July or later, fiscal year is current year/next year
-  // Otherwise it's previous year/current year
+  // In most organizations, fiscal year starts in April (month index 3) or July (month index 6)
+  // For this implementation, we'll use July as the fiscal year start
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
   
@@ -46,7 +45,7 @@ const getCurrentFiscalYear = (): string => {
 
 export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
   const currentFiscalYear = getCurrentFiscalYear();
-  console.log("Current Gregorian fiscal year:", currentFiscalYear);
+  console.log("Current fiscal year:", currentFiscalYear);
   
   const storedFiscalYear = localStorage.getItem('selectedFiscalYear');
   const storedFiscalYearId = localStorage.getItem('selectedFiscalYearId');
@@ -170,8 +169,8 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       // Create fiscal year in Supabase
-      const startDate = `${firstYear}-07-01`;
-      const endDate = `${secondYear}-06-30`;
+      const startDate = `${firstYear}-07-01`;  // July 1st 
+      const endDate = `${secondYear}-06-30`;   // June 30th
       
       const { data, error } = await supabase
         .from('fiscal_years')

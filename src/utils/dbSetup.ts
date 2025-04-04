@@ -101,7 +101,7 @@ export const ensureUserRole = async (userId: string) => {
 };
 
 /**
- * Get current fiscal year in Gregorian format
+ * Get current fiscal year
  */
 const getCurrentFiscalYear = (): { name: string, startDate: string, endDate: string } => {
   const now = new Date();
@@ -112,7 +112,7 @@ const getCurrentFiscalYear = (): { name: string, startDate: string, endDate: str
   let startYear: number;
   let endYear: number;
   
-  // In many countries including Nepal, fiscal year starts in July (month index 6)
+  // Standard fiscal year starting in July (month index 6)
   if (currentMonth >= 6) { // July or later
     fiscalYear = `${currentYear}/${currentYear + 1}`;
     startYear = currentYear;
@@ -131,7 +131,7 @@ const getCurrentFiscalYear = (): { name: string, startDate: string, endDate: str
 };
 
 /**
- * Ensure fiscal years exist in the database using Gregorian dates
+ * Ensure fiscal years exist in the database
  */
 export const setupFiscalYears = async () => {
   try {
@@ -150,7 +150,7 @@ export const setupFiscalYears = async () => {
       const { name: currentFiscalYear, startDate: currentStartDate, endDate: currentEndDate } = getCurrentFiscalYear();
       const [startYear, endYear] = currentFiscalYear.split('/').map(Number);
       
-      console.log(`Creating fiscal years with Gregorian years ${startYear}/${endYear}`);
+      console.log(`Creating fiscal years with years ${startYear}/${endYear}`);
       
       // Create current fiscal year
       const { error: insertError } = await supabase
@@ -181,7 +181,7 @@ export const setupFiscalYears = async () => {
         console.error('Error creating previous fiscal year:', insertPreviousError);
       }
       
-      toast.success('Fiscal years created with Gregorian calendar dates');
+      toast.success('Fiscal years created successfully');
       return true;
     }
     
@@ -244,7 +244,7 @@ export const setupDefaultData = async () => {
       toast.success('Default roles created');
     }
     
-    // Setup fiscal years with Gregorian dates
+    // Setup fiscal years
     await setupFiscalYears();
     
     return true;

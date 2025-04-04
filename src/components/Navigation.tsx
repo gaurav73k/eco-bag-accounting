@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
   CalendarDays, 
@@ -108,15 +108,16 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Close sidebar when route changes on mobile
   useEffect(() => {
-    if (isMobile && onClose) {
+    if (isMobile && onClose && isOpen) {
       onClose();
     }
-  }, [location.pathname, isMobile, onClose]);
+  }, [location.pathname, isMobile, onClose, isOpen]);
 
   // Handle the sidebar display based on device and state
   const sidebarClasses = cn(
@@ -124,6 +125,13 @@ const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
     isCollapsed && !isMobile ? "w-[70px]" : "w-[240px]",
     isMobile ? (isOpen ? "left-0" : "-left-full") : "left-0"
   );
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    if (isMobile && onClose) {
+      onClose();
+    }
+  };
 
   return (
     <aside className={sidebarClasses}>
@@ -157,10 +165,10 @@ const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
           <ul className="space-y-1 px-2">
             {navigationItems.map((item) => (
               <li key={item.path}>
-                <Link
-                  to={item.path}
+                <button
+                  onClick={() => handleNavigate(item.path)}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-300 group relative",
+                    "w-full flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-300 group relative text-left",
                     location.pathname === item.path 
                       ? "bg-primary text-primary-foreground" 
                       : "hover:bg-secondary"
@@ -189,7 +197,7 @@ const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
                       <HelpCircle className="h-3 w-3 text-muted-foreground ml-auto" />
                     </TooltipGuidance>
                   )}
-                </Link>
+                </button>
               </li>
             ))}
           </ul>

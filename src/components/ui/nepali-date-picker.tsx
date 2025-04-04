@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useFiscalYear } from "@/contexts/FiscalYearContext";
 
-interface NepaliDatePickerProps {
+interface DatePickerProps {
   value?: Date;
   onChange: (date: Date | undefined) => void;
   className?: string;
@@ -17,14 +17,14 @@ interface NepaliDatePickerProps {
   fiscalYearRestricted?: boolean;
 }
 
-export function NepaliDatePicker({
+export function DatePicker({
   value,
   onChange,
   className,
   placeholder = "Select date",
   disabled = false,
   fiscalYearRestricted = true,
-}: NepaliDatePickerProps) {
+}: DatePickerProps) {
   const { fiscalYearData } = useFiscalYear();
   
   // Format the date for display
@@ -74,4 +74,4 @@ export function NepaliDatePicker({
   );
 }
 
-export default NepaliDatePicker;
+export default DatePicker;

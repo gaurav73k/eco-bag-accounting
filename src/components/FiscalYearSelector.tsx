@@ -22,7 +22,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const FiscalYearSelector = () => {
   const { 
@@ -345,7 +344,7 @@ const FiscalYearSelector = () => {
               onChange={(e) => setNewFiscalYear(e.target.value)}
             />
             <p className="text-xs text-muted-foreground mt-2">
-              Example: 2023/2024 for Gregorian fiscal year 2023/2024
+              Example: 2023/2024 for fiscal year 2023/2024
             </p>
           </div>
           <DialogFooter>
