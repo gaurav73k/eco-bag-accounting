@@ -120,7 +120,7 @@ const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
 
   // Handle the sidebar display based on device and state
   const sidebarClasses = cn(
-    "fixed h-[calc(100vh-4rem)] top-16 bottom-0 border-r border-border/40 glass-effect transition-all duration-300 ease-cubic-bezier z-40",
+    "fixed h-[calc(100vh-4rem)] top-16 bottom-0 border-r border-border/40 transition-all duration-300 ease-in-out z-40 bg-background",
     isCollapsed && !isMobile ? "w-[70px]" : "w-[240px]",
     isMobile ? (isOpen ? "left-0" : "-left-full") : "left-0"
   );

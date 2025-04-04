@@ -15,12 +15,42 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  // Close sidebar on mobile when navigating to a new page
+  // Close sidebar when clicking outside on mobile
   useEffect(() => {
-    if (isMobile && isSidebarOpen) {
-      setIsSidebarOpen(false);
-    }
-  }, [window.location.pathname, isMobile]);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isMobile && isSidebarOpen) {
+        // Check if click is outside sidebar and not on menu button
+        const sidebar = document.querySelector('aside');
+        const menuButton = document.querySelector('button[aria-label="Toggle menu"]');
+        
+        if (sidebar && 
+            !sidebar.contains(event.target as Node) && 
+            menuButton && 
+            !menuButton.contains(event.target as Node)) {
+          setIsSidebarOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMobile, isSidebarOpen]);
+
+  // Close sidebar on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && isSidebarOpen) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isSidebarOpen]);
 
   return (
     <div className="min-h-screen bg-background">

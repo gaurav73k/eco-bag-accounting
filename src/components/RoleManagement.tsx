@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CircleUser, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface User {
   id: string;
@@ -41,6 +42,7 @@ const RoleManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { updateUserRole, hasPermission } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!hasPermission('manage_users')) {
@@ -190,7 +192,7 @@ const RoleManagement = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead className={isMobile ? "hidden" : ""}>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -201,9 +203,15 @@ const RoleManagement = () => {
                     <TableRow key={user.id}>
                       <TableCell className="flex items-center gap-2">
                         <CircleUser className="h-5 w-5 text-muted-foreground" />
-                        {user.name || 'Unnamed User'}
+                        <span className="truncate max-w-[120px]">
+                          {user.name || 'Unnamed User'}
+                        </span>
                       </TableCell>
-                      <TableCell>{user.email || 'No email'}</TableCell>
+                      <TableCell className={isMobile ? "hidden" : ""}>
+                        <span className="truncate block max-w-[180px]">
+                          {user.email || 'No email'}
+                        </span>
+                      </TableCell>
                       <TableCell>
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted">
                           {user.roleName}
@@ -216,14 +224,14 @@ const RoleManagement = () => {
                           onClick={() => openChangeRoleDialog(user)}
                           disabled={!hasPermission('manage_users')}
                         >
-                          Change Role
+                          {isMobile ? "Change" : "Change Role"}
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+                    <TableCell colSpan={isMobile ? 3 : 4} className="py-10 text-center text-muted-foreground">
                       No users found
                     </TableCell>
                   </TableRow>
@@ -240,14 +248,16 @@ const RoleManagement = () => {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Change User Role</DialogTitle>
           </DialogHeader>
           {selectedUser && (
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
-                <p className="text-sm font-medium">User: {selectedUser.name || selectedUser.email}</p>
+                <p className="text-sm font-medium">
+                  User: {selectedUser.name || selectedUser.email}
+                </p>
                 <div className="space-y-1">
                   <label htmlFor="role" className="text-sm font-medium">
                     Role
