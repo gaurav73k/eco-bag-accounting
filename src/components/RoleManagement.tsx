@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { CircleUser, Loader2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface User {
   id: string;
@@ -93,14 +94,17 @@ const RoleManagement = () => {
         throw profilesError;
       }
       
-      // Fetch user_roles
-      const { data: userRolesData, error: userRolesError } = await supabase
+      // Fetch user_roles with proper type assertion
+      const { data, error: userRolesError } = await supabase
         .from('user_roles')
         .select('user_id, role_id, roles (id, name)');
       
       if (userRolesError) {
         throw userRolesError;
       }
+      
+      // Explicitly type the data to match our expected structure
+      const userRolesData = data as UserRoleData[] | null;
       
       // Process and map the user data
       const processedUsers: User[] = [];
@@ -114,9 +118,9 @@ const RoleManagement = () => {
             email = authUser?.email || '';
           }
           
-          // Find role - ensure proper typing of userRolesData
+          // Find role using the properly typed userRolesData
           const userRole = userRolesData ? 
-            (userRolesData as UserRoleData[]).find(ur => ur.user_id === profile.id) : 
+            userRolesData.find(ur => ur.user_id === profile.id) : 
             undefined;
           
           const roleId = userRole?.role_id || '';
@@ -182,30 +186,30 @@ const RoleManagement = () => {
       ) : (
         <div className="bg-card rounded-md shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-muted/50">
-                  <th className="py-3 px-4 text-left font-medium text-muted-foreground">Name</th>
-                  <th className="py-3 px-4 text-left font-medium text-muted-foreground">Email</th>
-                  <th className="py-3 px-4 text-left font-medium text-muted-foreground">Role</th>
-                  <th className="py-3 px-4 text-left font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-muted/20">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {users.length > 0 ? (
                   users.map((user) => (
-                    <tr key={user.id} className="hover:bg-muted/30">
-                      <td className="py-3 px-4 flex items-center gap-2">
+                    <TableRow key={user.id}>
+                      <TableCell className="flex items-center gap-2">
                         <CircleUser className="h-5 w-5 text-muted-foreground" />
                         {user.name || 'Unnamed User'}
-                      </td>
-                      <td className="py-3 px-4">{user.email || 'No email'}</td>
-                      <td className="py-3 px-4">
+                      </TableCell>
+                      <TableCell>{user.email || 'No email'}</TableCell>
+                      <TableCell>
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted">
                           {user.roleName}
                         </span>
-                      </td>
-                      <td className="py-3 px-4">
+                      </TableCell>
+                      <TableCell>
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -214,18 +218,18 @@ const RoleManagement = () => {
                         >
                           Change Role
                         </Button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={4} className="py-10 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
                       No users found
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           {users.length > 0 && (
             <div className="py-3 px-4 bg-muted/20 text-xs text-muted-foreground">
