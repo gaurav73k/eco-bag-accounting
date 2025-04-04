@@ -323,7 +323,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
 
   const isCurrentFiscalYear = fiscalYear === currentFiscalYear;
   
-  // Format the fiscal year for display (no BS notation)
+  // Format the fiscal year for display
   const formattedFiscalYear = fiscalYear;
 
   return (

@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { CircleUser, Loader2 } from 'lucide-react';
 
 interface User {
   id: string;
@@ -66,7 +67,15 @@ const RoleManagement = () => {
         setRoles(typedRoles);
       }
       
-      // First, fetch all profiles with emails
+      // Fetch users with their emails
+      const { data: authUsersData, error: authUsersError } = await supabase.auth.admin.listUsers();
+      
+      if (authUsersError) {
+        console.error('Error fetching auth users:', authUsersError);
+        // Continue with profiles fetch to get what we can
+      }
+      
+      // Fetch all profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name');
@@ -89,9 +98,12 @@ const RoleManagement = () => {
       
       if (profilesData) {
         for (const profile of profilesData) {
-          // Since we can't directly access auth.users, we'll use the email from profiles or set it empty
-          // In a real application, you would need a custom API or function to fetch this
-          const email = ''; // We can't get this directly
+          // Try to get email from auth users data
+          let email = '';
+          if (authUsersData?.users) {
+            const authUser = authUsersData.users.find(u => u.id === profile.id);
+            email = authUser?.email || '';
+          }
           
           // Find role
           const userRole = userRolesData?.find(ur => ur.user_id === profile.id);
@@ -149,38 +161,65 @@ const RoleManagement = () => {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 px-4">
       <h1 className="text-2xl font-bold mb-4">User Role Management</h1>
       {isLoading ? (
-        <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="py-2 px-4 border-b">Name</th>
-                <th className="py-2 px-4 border-b">Email</th>
-                <th className="py-2 px-4 border-b">Role</th>
-                <th className="py-2 px-4 border-b">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="py-2 px-4 border-b">{user.name}</td>
-                  <td className="py-2 px-4 border-b">{user.email}</td>
-                  <td className="py-2 px-4 border-b">{user.roleName}</td>
-                  <td className="py-2 px-4 border-b">
-                    <Button size="sm" onClick={() => openChangeRoleDialog(user)}>
-                      Change Role
-                    </Button>
-                  </td>
+        <div className="bg-card rounded-md shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="py-3 px-4 text-left font-medium text-muted-foreground">Name</th>
+                  <th className="py-3 px-4 text-left font-medium text-muted-foreground">Email</th>
+                  <th className="py-3 px-4 text-left font-medium text-muted-foreground">Role</th>
+                  <th className="py-3 px-4 text-left font-medium text-muted-foreground">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-muted/20">
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <tr key={user.id} className="hover:bg-muted/30">
+                      <td className="py-3 px-4 flex items-center gap-2">
+                        <CircleUser className="h-5 w-5 text-muted-foreground" />
+                        {user.name || 'Unnamed User'}
+                      </td>
+                      <td className="py-3 px-4">{user.email || 'No email'}</td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted">
+                          {user.roleName}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => openChangeRoleDialog(user)}
+                          disabled={!hasPermission('manage_users')}
+                        >
+                          Change Role
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-10 text-center text-muted-foreground">
+                      No users found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {users.length > 0 && (
+            <div className="py-3 px-4 bg-muted/20 text-xs text-muted-foreground">
+              Showing {users.length} user{users.length !== 1 ? 's' : ''}
+            </div>
+          )}
         </div>
       )}
 
@@ -192,26 +231,29 @@ const RoleManagement = () => {
           {selectedUser && (
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
-                <label htmlFor="role" className="text-right inline-block w-24">
-                  Role
-                </label>
-                <Select onValueChange={handleRoleChange} defaultValue={selectedUser.roleId}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <p className="text-sm font-medium">User: {selectedUser.name || selectedUser.email}</p>
+                <div className="space-y-1">
+                  <label htmlFor="role" className="text-sm font-medium">
+                    Role
+                  </label>
+                  <Select onValueChange={handleRoleChange} defaultValue={selectedUser.roleId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) => (
+                        <SelectItem key={role.id} value={role.id}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => setIsDialogOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" onClick={confirmRoleChange} disabled={isLoading}>

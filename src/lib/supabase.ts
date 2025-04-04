@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
@@ -78,48 +79,6 @@ export const createUserProfile = async (userId: string, name: string) => {
   }
 };
 
-// Settings related functions
-export const getAppSettings = async () => {
-  try {
-    // Cast the result since the app_settings table might not be in the generated types yet
-    const { data, error } = await supabase
-      .from('app_settings')
-      .select('*')
-      .single();
-    
-    if (error) {
-      console.error('Error fetching app settings:', error);
-      return null;
-    }
-    
-    return data as unknown as AppSettings;
-  } catch (err) {
-    console.error('Error in getAppSettings:', err);
-    return null;
-  }
-};
-
-export const updateAppSettings = async (settings: Partial<AppSettings>) => {
-  try {
-    // Cast the result since the app_settings table might not be in the generated types yet
-    const { data, error } = await supabase
-      .from('app_settings')
-      .upsert(settings)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error updating app settings:', error);
-      throw error;
-    }
-    
-    return data as unknown as AppSettings;
-  } catch (err) {
-    console.error('Error in updateAppSettings:', err);
-    throw err;
-  }
-};
-
 // User management functions
 export const resetUserPassword = async (email: string) => {
   try {
@@ -189,6 +148,48 @@ export const updateUserRole = async (userId: string, roleId: string) => {
   } catch (err) {
     console.error('Error in updateUserRole:', err);
     toast.error('Failed to update user role');
+    throw err;
+  }
+};
+
+// Settings related functions
+export const getAppSettings = async () => {
+  try {
+    // Cast the result since the app_settings table might not be in the generated types yet
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Error fetching app settings:', error);
+      return null;
+    }
+    
+    return data as unknown as AppSettings;
+  } catch (err) {
+    console.error('Error in getAppSettings:', err);
+    return null;
+  }
+};
+
+export const updateAppSettings = async (settings: Partial<AppSettings>) => {
+  try {
+    // Cast the result since the app_settings table might not be in the generated types yet
+    const { data, error } = await supabase
+      .from('app_settings')
+      .upsert(settings)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating app settings:', error);
+      throw error;
+    }
+    
+    return data as unknown as AppSettings;
+  } catch (err) {
+    console.error('Error in updateAppSettings:', err);
     throw err;
   }
 };
@@ -319,6 +320,31 @@ export const updateFiscalYear = async (id: string, fiscalYear: any) => {
   } catch (err) {
     console.error('Error in updateFiscalYear:', err);
     throw err;
+  }
+};
+
+// Get currently active fiscal year
+export const getActiveFiscalYear = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('fiscal_years')
+      .select('*')
+      .eq('is_active', true)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No active fiscal year found
+        return null;
+      }
+      console.error('Error fetching active fiscal year:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Error in getActiveFiscalYear:', err);
+    return null;
   }
 };
 
