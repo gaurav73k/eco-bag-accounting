@@ -136,6 +136,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
             <Button 
               onClick={handleSave} 
               disabled={disabled || !canSave}
+              variant="default"
             >
               {saveLabel}
             </Button>

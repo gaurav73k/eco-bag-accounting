@@ -1,7 +1,7 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker, DayPickerRangeProps, DayPickerSingleProps } from "react-day-picker";
+import { DayPicker } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -59,15 +59,18 @@ function Calendar({
           // Safely get the displayDate from props
           const displayDate = props.displayMonth || new Date();
           
-          // Get the selected date if available
+          // Get the selected date safely checking the props structure
           let selectedDate: Date | undefined;
           
-          // Try to access selected date based on single or range selection
-          if ('selected' in props) {
-            selectedDate = (props as DayPickerSingleProps).selected;
-          } else if ('range' in props && (props as DayPickerRangeProps).range) {
-            const range = (props as DayPickerRangeProps).range;
-            selectedDate = range?.from;
+          // Handle both single and range selection modes with proper type checking
+          if ('selected' in props && props.selected instanceof Date) {
+            selectedDate = props.selected;
+          } else if ('selected' in props && Array.isArray(props.selected) && props.selected.length > 0) {
+            selectedDate = props.selected[0];
+          } else if ('mode' in props && props.mode === 'range' && 'selected' in props && props.selected) {
+            // For range selection
+            const selected = props.selected as { from?: Date; to?: Date } | undefined;
+            selectedDate = selected?.from;
           }
           
           const dateToDisplay = selectedDate || displayDate;
