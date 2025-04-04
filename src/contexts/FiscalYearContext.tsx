@@ -8,8 +8,10 @@ type FiscalYearContextType = {
   setFiscalYear: (year: string) => void;
   isCurrentFiscalYear: boolean;
   availableFiscalYears: string[];
+  fiscalYearsData: any[];
   addFiscalYear: (year: string) => Promise<boolean>;
   deleteFiscalYear: (year: string) => Promise<boolean>;
+  updateFiscalYearStatus: (id: string, updates: any) => Promise<boolean>;
   formattedFiscalYear: string;
   fiscalYearId: string | null;
   fiscalYearData: any | null;
@@ -205,6 +207,59 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
+  const updateFiscalYearStatus = async (id: string, updates: any): Promise<boolean> => {
+    try {
+      // If setting a fiscal year to active, first deactivate all others
+      if (updates.is_active) {
+        // Deactivate all fiscal years first
+        const { error: batchError } = await supabase
+          .from('fiscal_years')
+          .update({ is_active: false })
+          .neq('id', id);
+          
+        if (batchError) {
+          console.error('Error deactivating other fiscal years:', batchError);
+        }
+      }
+      
+      // Update the specific fiscal year
+      const { error } = await supabase
+        .from('fiscal_years')
+        .update(updates)
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error updating fiscal year:', error);
+        toast.error('Failed to update fiscal year');
+        return false;
+      }
+      
+      // Refetch fiscal years to get updated data
+      const { data: refreshedData, error: refreshError } = await supabase
+        .from('fiscal_years')
+        .select('*')
+        .order('start_date', { ascending: false });
+        
+      if (refreshError) {
+        console.error('Error refreshing fiscal years:', refreshError);
+      } else if (refreshedData) {
+        setFiscalYearsData(refreshedData);
+        
+        // Update local state for current fiscal year if it was updated
+        const currentFY = refreshedData.find(fy => fy.id === fiscalYearId);
+        if (currentFY) {
+          setFiscalYearData(currentFY);
+        }
+      }
+      
+      return true;
+    } catch (e) {
+      console.error('Error updating fiscal year:', e);
+      toast.error('Failed to update fiscal year');
+      return false;
+    }
+  };
+  
   const deleteFiscalYear = async (year: string): Promise<boolean> => {
     if (!year) return false;
     
@@ -218,6 +273,12 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       const fyData = fiscalYearsData.find(fy => fy.name === year);
       if (!fyData) {
         toast.error('Fiscal year not found');
+        return false;
+      }
+      
+      // Check if this is the active fiscal year
+      if (fyData.is_active) {
+        toast.error('Cannot delete an active fiscal year');
         return false;
       }
       
@@ -272,8 +333,10 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         setFiscalYear,
         isCurrentFiscalYear,
         availableFiscalYears,
+        fiscalYearsData,
         addFiscalYear,
         deleteFiscalYear,
+        updateFiscalYearStatus,
         formattedFiscalYear,
         fiscalYearId,
         fiscalYearData,

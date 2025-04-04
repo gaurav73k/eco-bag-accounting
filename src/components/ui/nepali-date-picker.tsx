@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useFiscalYear } from "@/contexts/FiscalYearContext";
 
 interface NepaliDatePickerProps {
   value?: Date;
@@ -13,6 +14,7 @@ interface NepaliDatePickerProps {
   className?: string;
   placeholder?: string;
   disabled?: boolean;
+  fiscalYearRestricted?: boolean;
 }
 
 export function NepaliDatePicker({
@@ -21,9 +23,16 @@ export function NepaliDatePicker({
   className,
   placeholder = "Select date",
   disabled = false,
+  fiscalYearRestricted = true,
 }: NepaliDatePickerProps) {
+  const { fiscalYearData } = useFiscalYear();
+  
   // Format the date for display
   const displayValue = value ? format(value, "PPP") : undefined;
+  
+  // Calculate fiscal year date range if available
+  const fromDate = fiscalYearData?.start_date ? new Date(fiscalYearData.start_date) : undefined;
+  const toDate = fiscalYearData?.end_date ? new Date(fiscalYearData.end_date) : undefined;
 
   return (
     <Popover>
@@ -47,7 +56,19 @@ export function NepaliDatePicker({
           selected={value}
           onSelect={onChange}
           initialFocus
+          disabled={fiscalYearRestricted && fromDate && toDate ? 
+            (date) => date < fromDate || date > toDate : undefined}
+          fromDate={fiscalYearRestricted ? fromDate : undefined}
+          toDate={fiscalYearRestricted ? toDate : undefined}
         />
+        {fiscalYearData && fiscalYearRestricted && (
+          <div className="p-2 text-xs text-center border-t border-border">
+            Fiscal Year: {fiscalYearData.name}
+            <div className="text-muted-foreground">
+              {fromDate && toDate ? `${format(fromDate, "MMM d, yyyy")} - ${format(toDate, "MMM d, yyyy")}` : "No date range set"}
+            </div>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
