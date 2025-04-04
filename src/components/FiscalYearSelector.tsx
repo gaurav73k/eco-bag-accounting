@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,7 +33,8 @@ const FiscalYearSelector = () => {
     deleteFiscalYear,
     fiscalYearData,
     loading,
-    updateFiscalYearStatus
+    updateFiscalYearStatus,
+    fiscalYearsData
   } = useFiscalYear();
   
   const { hasPermission } = useAuth();
@@ -51,9 +51,7 @@ const FiscalYearSelector = () => {
   
   const canManageFiscalYear = hasPermission('manage_fiscal_year');
   
-  // Check if fiscal year has been selected
   useEffect(() => {
-    // If user has just logged in and no fiscal year is set, show the selector
     const hasSelectedFiscalYear = localStorage.getItem('hasSelectedFiscalYear');
     if (!hasSelectedFiscalYear) {
       setIsOpen(true);
@@ -79,13 +77,11 @@ const FiscalYearSelector = () => {
       return;
     }
     
-    // Basic validation for YYYY/YYYY format
     if (!newFiscalYear.match(/^\d{4}\/\d{4}$/)) {
       toast.error('Fiscal year must be in format YYYY/YYYY');
       return;
     }
     
-    // Add the fiscal year
     const success = await addFiscalYear(newFiscalYear);
     if (success) {
       setNewFiscalYear('');
@@ -111,7 +107,6 @@ const FiscalYearSelector = () => {
   const handleUpdateFiscalYear = async () => {
     if (!fiscalYearToEdit) return;
     
-    // Validate dates
     if (!startDate || !endDate) {
       toast.error('Both start and end dates are required');
       return;
@@ -125,7 +120,6 @@ const FiscalYearSelector = () => {
       return;
     }
     
-    // Update fiscal year
     try {
       await updateFiscalYearStatus(fiscalYearToEdit.id, {
         start_date: startDate,
@@ -147,7 +141,6 @@ const FiscalYearSelector = () => {
       });
       
       if (!yearData.is_active) {
-        // If activating this year, deactivate all others
         toast.success(`Fiscal year ${yearData.name} is now active`);
       } else {
         toast.success(`Fiscal year ${yearData.name} is now inactive`);
@@ -158,7 +151,6 @@ const FiscalYearSelector = () => {
     }
   };
 
-  // Format dates for display
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'MMM dd, yyyy');
@@ -181,7 +173,6 @@ const FiscalYearSelector = () => {
       </Button>
       
       <Dialog open={isOpen} onOpenChange={(open) => {
-        // Only allow closing if the user has already selected a fiscal year
         if (!open && localStorage.getItem('hasSelectedFiscalYear')) {
           setIsOpen(false);
         }
@@ -336,7 +327,6 @@ const FiscalYearSelector = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Add fiscal year dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[325px]">
           <DialogHeader>
@@ -368,7 +358,6 @@ const FiscalYearSelector = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Edit fiscal year dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -413,7 +402,6 @@ const FiscalYearSelector = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete confirmation dialog */}
       <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
