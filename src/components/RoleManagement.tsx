@@ -23,6 +23,15 @@ interface Role {
   permissions: string[];
 }
 
+interface UserRoleData {
+  user_id: string;
+  role_id: string;
+  roles: {
+    id: string;
+    name: string;
+  } | null;
+}
+
 const RoleManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -105,8 +114,11 @@ const RoleManagement = () => {
             email = authUser?.email || '';
           }
           
-          // Find role
-          const userRole = userRolesData?.find(ur => ur.user_id === profile.id);
+          // Find role - ensure proper typing of userRolesData
+          const userRole = userRolesData ? 
+            (userRolesData as UserRoleData[]).find(ur => ur.user_id === profile.id) : 
+            undefined;
+          
           const roleId = userRole?.role_id || '';
           const roleName = userRole?.roles?.name || 'No Role';
           
