@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -123,13 +124,15 @@ const FiscalYearSelector = () => {
     }
     
     try {
-      await updateFiscalYearStatus(fiscalYearToEdit.id, {
+      const success = await updateFiscalYearStatus(fiscalYearToEdit.id, {
         start_date: startDate,
         end_date: endDate
       });
       
-      setIsEditDialogOpen(false);
-      toast.success('Fiscal year updated successfully');
+      if (success) {
+        setIsEditDialogOpen(false);
+        toast.success('Fiscal year updated successfully');
+      }
     } catch (error) {
       console.error('Error updating fiscal year:', error);
       toast.error('Failed to update fiscal year');
@@ -138,14 +141,16 @@ const FiscalYearSelector = () => {
   
   const handleToggleActiveFiscalYear = async (yearData: any) => {
     try {
-      await updateFiscalYearStatus(yearData.id, {
+      const success = await updateFiscalYearStatus(yearData.id, {
         is_active: !yearData.is_active
       });
       
-      if (!yearData.is_active) {
-        toast.success(`Fiscal year ${yearData.name} is now active`);
-      } else {
-        toast.success(`Fiscal year ${yearData.name} is now inactive`);
+      if (success) {
+        if (!yearData.is_active) {
+          toast.success(`Fiscal year ${yearData.name} is now active`);
+        } else {
+          toast.success(`Fiscal year ${yearData.name} is now inactive`);
+        }
       }
     } catch (error) {
       console.error('Error toggling fiscal year status:', error);

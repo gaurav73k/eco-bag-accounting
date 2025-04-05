@@ -161,6 +161,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
+      setLoading(true);
       // Create fiscal year in Supabase
       const startDate = `${firstYear}-07-01`;  // July 1st 
       const endDate = `${secondYear}-06-30`;   // June 30th
@@ -183,7 +184,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         if (error.code === '42501') {
           toast.error('Permission denied: You do not have permission to create fiscal years');
         } else {
-          toast.error('Failed to create fiscal year');
+          toast.error(`Failed to create fiscal year: ${error.message}`);
         }
         return false;
       }
@@ -198,15 +199,18 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       
       toast.success(`Added fiscal year ${year}`);
       return true;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error adding fiscal year:', e);
-      toast.error('Failed to add fiscal year');
+      toast.error(`Failed to add fiscal year: ${e.message || 'Unknown error'}`);
       return false;
+    } finally {
+      setLoading(false);
     }
   };
   
   const updateFiscalYearStatus = async (id: string, updates: any): Promise<boolean> => {
     try {
+      setLoading(true);
       // If setting a fiscal year to active, first deactivate all others
       if (updates.is_active) {
         // Deactivate all fiscal years first
@@ -239,7 +243,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         if (error.code === '42501') {
           toast.error('Permission denied: You do not have permission to update fiscal years');
         } else {
-          toast.error('Failed to update fiscal year');
+          toast.error(`Failed to update fiscal year: ${error.message}`);
         }
         return false;
       }
@@ -263,10 +267,12 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       }
       
       return true;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error updating fiscal year:', e);
-      toast.error('Failed to update fiscal year');
+      toast.error(`Failed to update fiscal year: ${e.message || 'Unknown error'}`);
       return false;
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -279,6 +285,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
+      setLoading(true);
       // Find the fiscal year ID
       const fyData = fiscalYearsData.find(fy => fy.name === year);
       if (!fyData) {
@@ -319,7 +326,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         if (error.code === '42501') {
           toast.error('Permission denied: You do not have permission to delete fiscal years');
         } else {
-          toast.error('Failed to delete fiscal year');
+          toast.error(`Failed to delete fiscal year: ${error.message}`);
         }
         return false;
       }
@@ -330,10 +337,12 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       
       toast.success(`Deleted fiscal year ${year}`);
       return true;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error deleting fiscal year:', e);
-      toast.error('Failed to delete fiscal year');
+      toast.error(`Failed to delete fiscal year: ${e.message || 'Unknown error'}`);
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 

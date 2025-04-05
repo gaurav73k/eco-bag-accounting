@@ -112,7 +112,6 @@ const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
   const isMobile = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Close sidebar when route changes on mobile
   useEffect(() => {
     if (isMobile && onClose && isOpen) {
       onClose();
@@ -153,6 +152,7 @@ const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
                 size="icon"
                 onClick={onClose}
                 className="md:hidden"
+                aria-label="Close menu"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -162,6 +162,7 @@ const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
               <button 
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 className="p-1 rounded-full hover:bg-accent transition-colors ml-auto"
+                aria-label={isCollapsed ? "Expand menu" : "Collapse menu"}
               >
                 <ChevronRight className={cn(
                   "h-4 w-4 transition-transform duration-300",
