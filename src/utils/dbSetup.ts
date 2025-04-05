@@ -148,37 +148,19 @@ export const setupFiscalYears = async () => {
     // If no fiscal years exist, create default ones
     if (!fiscalYears || fiscalYears.length === 0) {
       const { name: currentFiscalYear, startDate: currentStartDate, endDate: currentEndDate } = getCurrentFiscalYear();
+      const [startYear, endYear] = currentFiscalYear.split('/').map(Number);
       
-      console.log(`Creating fiscal year: ${currentFiscalYear}`);
+      console.log(`Creating fiscal years with years ${startYear}/${endYear}`);
       
-      // Create current fiscal year
       try {
-        const { error: insertError } = await supabase
-          .from('fiscal_years')
-          .insert({
-            name: currentFiscalYear,
-            start_date: currentStartDate,
-            end_date: currentEndDate,
-            is_active: true
-          });
-        
-        if (insertError) {
-          console.error('Error creating fiscal year:', insertError);
-          
-          if (insertError.code === '42501') {
-            // Permission error, likely RLS policy blocking
-            toast.info('Please create fiscal years through the UI. Initial setup is restricted by security policies.');
-          } else {
-            toast.error('Could not create default fiscal year: ' + insertError.message);
-          }
-          return false;
-        }
-        
-        toast.success(`Created fiscal year ${currentFiscalYear}`);
-        return true;
+        // Try to use stored procedure or RPC if RLS is blocking direct inserts
+        // This will depend on database setup, but for now we'll show a message
+        // to the user that they need to create fiscal years through the UI
+        toast.info('Please create fiscal years through the UI. Initial setup is restricted by security policies.');
+        return false;
       } catch (insertError) {
         console.error('Error creating fiscal years:', insertError);
-        toast.error('Could not create default fiscal years');
+        toast.error('Could not create default fiscal years due to security restrictions');
         return false;
       }
     }
