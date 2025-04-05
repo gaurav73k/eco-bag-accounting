@@ -68,6 +68,11 @@ const FiscalYearSelector = () => {
   }, [fiscalYear]);
   
   const handleSaveFiscalYear = () => {
+    if (!localFiscalYear) {
+      toast.error('Please select a fiscal year');
+      return;
+    }
+    
     setFiscalYear(localFiscalYear);
     localStorage.setItem('hasSelectedFiscalYear', 'true');
     setIsOpen(false);
@@ -102,8 +107,8 @@ const FiscalYearSelector = () => {
   
   const handleEditYear = (yearData: any) => {
     setFiscalYearToEdit(yearData);
-    setStartDate(yearData.start_date);
-    setEndDate(yearData.end_date);
+    setStartDate(yearData.start_date || '');
+    setEndDate(yearData.end_date || '');
     setIsEditDialogOpen(true);
   };
   
@@ -159,6 +164,8 @@ const FiscalYearSelector = () => {
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'Not set';
+    
     try {
       return format(new Date(dateString), 'MMM dd, yyyy');
     } catch (e) {

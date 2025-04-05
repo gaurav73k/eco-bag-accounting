@@ -162,6 +162,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       setLoading(true);
+      
       // Create fiscal year in Supabase
       const startDate = `${firstYear}-07-01`;  // July 1st 
       const endDate = `${secondYear}-06-30`;   // June 30th
@@ -180,22 +181,32 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Error creating fiscal year:', error);
         
-        // Check if this is an RLS policy error
+        // Fixed error message and handling
         if (error.code === '42501') {
           toast.error('Permission denied: You do not have permission to create fiscal years');
+        } else if (error.code === '23505') {
+          toast.error('This fiscal year already exists');
         } else {
           toast.error(`Failed to create fiscal year: ${error.message}`);
         }
         return false;
       }
       
-      // Update local state
+      if (!data) {
+        toast.error('Failed to create fiscal year: No data returned');
+        return false;
+      }
+      
+      // Update local state with the new fiscal year
       setFiscalYearsData(prev => [...prev, data]);
-      setAvailableFiscalYears(prev => [...prev, year].sort((a, b) => {
-        const [yearA] = a.split('/').map(Number);
-        const [yearB] = b.split('/').map(Number);
-        return yearB - yearA; // Sort in descending order (newest first)
-      }));
+      setAvailableFiscalYears(prev => {
+        const newYears = [...prev, year];
+        return newYears.sort((a, b) => {
+          const [yearA] = a.split('/').map(Number);
+          const [yearB] = b.split('/').map(Number);
+          return yearB - yearA; // Sort in descending order (newest first)
+        });
+      });
       
       toast.success(`Added fiscal year ${year}`);
       return true;
@@ -211,6 +222,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
   const updateFiscalYearStatus = async (id: string, updates: any): Promise<boolean> => {
     try {
       setLoading(true);
+      
       // If setting a fiscal year to active, first deactivate all others
       if (updates.is_active) {
         // Deactivate all fiscal years first
@@ -231,10 +243,12 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       }
       
       // Update the specific fiscal year
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('fiscal_years')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
       
       if (error) {
         console.error('Error updating fiscal year:', error);
@@ -246,6 +260,19 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
           toast.error(`Failed to update fiscal year: ${error.message}`);
         }
         return false;
+      }
+      
+      if (!data) {
+        toast.error('Failed to update fiscal year: No data returned');
+        return false;
+      }
+      
+      // Update local state
+      setFiscalYearsData(prev => prev.map(fy => fy.id === id ? data : fy));
+      
+      // Update current fiscal year data if it's the one being updated
+      if (id === fiscalYearId) {
+        setFiscalYearData(data);
       }
       
       // Refetch fiscal years to get updated data

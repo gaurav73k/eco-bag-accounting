@@ -38,20 +38,6 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
     };
   }, [isMobile, isSidebarOpen]);
 
-  // Close sidebar on window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768 && isSidebarOpen) {
-        setIsSidebarOpen(false);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [isSidebarOpen]);
-
   return (
     <div className="min-h-screen flex flex-col bg-background w-full">
       <Header onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />

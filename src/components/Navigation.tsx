@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -114,7 +113,8 @@ const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
 
   useEffect(() => {
     if (isMobile && onClose && isOpen) {
-      onClose();
+      // We want to keep the menu open if the user navigates on mobile
+      // This was previously closing the menu on any route change
     }
   }, [location.pathname, isMobile, onClose, isOpen]);
 
