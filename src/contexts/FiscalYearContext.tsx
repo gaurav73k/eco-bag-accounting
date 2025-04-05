@@ -98,20 +98,13 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         } else {
-          // If no fiscal years in the database, use local data
+          // If no fiscal years in the database, use local data only
           const defaultYears = [
             currentFiscalYear,
             `${parseInt(currentFiscalYear.split('/')[0]) - 1}/${parseInt(currentFiscalYear.split('/')[1]) - 1}`
           ];
           setAvailableFiscalYears(defaultYears);
-          
-          // Create fiscal years in the database
-          console.log("No fiscal years found in database, creating defaults");
-          const startYear = parseInt(currentFiscalYear.split('/')[0]);
-          const endYear = parseInt(currentFiscalYear.split('/')[1]);
-          
-          await addFiscalYear(`${startYear}/${endYear}`);
-          await addFiscalYear(`${startYear-1}/${endYear-1}`);
+          toast.info('Please create fiscal years using the Fiscal Year selector');
         }
       } catch (e) {
         console.error('Error in fiscal year initialization:', e);
@@ -185,7 +178,13 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error('Error creating fiscal year:', error);
-        toast.error('Failed to create fiscal year');
+        
+        // Check if this is an RLS policy error
+        if (error.code === '42501') {
+          toast.error('Permission denied: You do not have permission to create fiscal years');
+        } else {
+          toast.error('Failed to create fiscal year');
+        }
         return false;
       }
       
@@ -218,6 +217,12 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
           
         if (batchError) {
           console.error('Error deactivating other fiscal years:', batchError);
+          
+          // Check if this is an RLS policy error
+          if (batchError.code === '42501') {
+            toast.error('Permission denied: You do not have permission to update fiscal years');
+          }
+          return false;
         }
       }
       
@@ -229,7 +234,13 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error('Error updating fiscal year:', error);
-        toast.error('Failed to update fiscal year');
+        
+        // Check if this is an RLS policy error
+        if (error.code === '42501') {
+          toast.error('Permission denied: You do not have permission to update fiscal years');
+        } else {
+          toast.error('Failed to update fiscal year');
+        }
         return false;
       }
       
@@ -303,7 +314,13 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error('Error deleting fiscal year:', error);
-        toast.error('Failed to delete fiscal year');
+        
+        // Check if this is an RLS policy error
+        if (error.code === '42501') {
+          toast.error('Permission denied: You do not have permission to delete fiscal years');
+        } else {
+          toast.error('Failed to delete fiscal year');
+        }
         return false;
       }
       

@@ -76,7 +76,7 @@ const RoleManagement = () => {
           user_id,
           role_id,
           created_at,
-          user:user_id(id, email, name),
+          user:profiles!user_id(id, email, name),
           role:roles(id, name, permissions)
         `);
       
@@ -84,8 +84,9 @@ const RoleManagement = () => {
       
       setUsers(usersData || []);
       setRoles(rolesData || []);
-      // Type assertion to fix TypeScript error
-      setUserRolesData(userRoles as UserRoleData[]);
+      
+      // Use a type assertion with unknown as intermediary to satisfy TypeScript
+      setUserRolesData(userRoles as unknown as UserRoleData[]);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to fetch user and role data');

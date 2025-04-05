@@ -138,7 +138,7 @@ export const setupFiscalYears = async () => {
     // Check if fiscal years table has data
     const { data: fiscalYears, error: fiscalYearsError } = await supabase
       .from('fiscal_years')
-      .select('count');
+      .select('*');
       
     if (fiscalYearsError) {
       console.error('Error checking fiscal years:', fiscalYearsError);
@@ -152,37 +152,17 @@ export const setupFiscalYears = async () => {
       
       console.log(`Creating fiscal years with years ${startYear}/${endYear}`);
       
-      // Create current fiscal year
-      const { error: insertError } = await supabase
-        .from('fiscal_years')
-        .insert({
-          name: `${startYear}/${endYear}`,
-          start_date: currentStartDate,
-          end_date: currentEndDate,
-          is_active: true
-        });
-        
-      if (insertError) {
-        console.error('Error creating current fiscal year:', insertError);
+      try {
+        // Try to use stored procedure or RPC if RLS is blocking direct inserts
+        // This will depend on database setup, but for now we'll show a message
+        // to the user that they need to create fiscal years through the UI
+        toast.info('Please create fiscal years through the UI. Initial setup is restricted by security policies.');
+        return false;
+      } catch (insertError) {
+        console.error('Error creating fiscal years:', insertError);
+        toast.error('Could not create default fiscal years due to security restrictions');
         return false;
       }
-      
-      // Create previous fiscal year
-      const { error: insertPreviousError } = await supabase
-        .from('fiscal_years')
-        .insert({
-          name: `${startYear-1}/${endYear-1}`,
-          start_date: `${startYear-1}-07-01`, 
-          end_date: `${endYear-1}-06-30`,    
-          is_active: false
-        });
-        
-      if (insertPreviousError) {
-        console.error('Error creating previous fiscal year:', insertPreviousError);
-      }
-      
-      toast.success('Fiscal years created successfully');
-      return true;
     }
     
     return true;
