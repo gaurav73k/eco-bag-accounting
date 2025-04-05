@@ -57,21 +57,23 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
     if (isMobile && isSidebarOpen) {
       setIsSidebarOpen(false);
     }
-  }, [location.pathname, isMobile]);
+  }, [location.pathname, isMobile, isSidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background w-full">
       <Header onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
-      <Navigation isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      <main className={cn(
-        "pt-16 transition-all duration-300 ease-in-out min-h-screen",
-        isMobile ? "pl-0" : "pl-[240px]",
-        className
-      )}>
-        <div className="container mx-auto p-2 md:p-6">
-          {children}
-        </div>
-      </main>
+      <div className="flex flex-1 relative overflow-hidden">
+        <Navigation isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <main className={cn(
+          "flex-1 transition-all duration-300 ease-in-out min-h-screen pt-16",
+          isMobile ? "w-full" : "ml-[240px]",
+          className
+        )}>
+          <div className="container mx-auto p-2 md:p-6">
+            {children}
+          </div>
+        </main>
+      </div>
       <UserManual />
     </div>
   );

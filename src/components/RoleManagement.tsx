@@ -39,7 +39,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 
-const RoleManagement: React.FC = () => {
+const RoleManagement = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const [userRolesData, setUserRolesData] = useState<UserRoleData[] | null>(null);
@@ -68,7 +68,7 @@ const RoleManagement: React.FC = () => {
       
       if (rolesError) throw rolesError;
       
-      // Fetch user roles with user and role data
+      // Fetch user roles with user and role data - fix the join
       const { data: userRoles, error: userRolesError } = await supabase
         .from('user_roles')
         .select(`
@@ -76,15 +76,16 @@ const RoleManagement: React.FC = () => {
           user_id,
           role_id,
           created_at,
-          user:profiles!user_id(id, email, name),
-          role:roles!role_id(id, name, permissions)
+          user:user_id(id, email, name),
+          role:roles(id, name, permissions)
         `);
       
       if (userRolesError) throw userRolesError;
       
       setUsers(usersData || []);
       setRoles(rolesData || []);
-      setUserRolesData(userRoles);
+      // Type assertion to fix TypeScript error
+      setUserRolesData(userRoles as UserRoleData[]);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to fetch user and role data');
@@ -134,7 +135,7 @@ const RoleManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
