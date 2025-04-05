@@ -1,228 +1,196 @@
-
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { 
-  CalendarDays, 
-  ChevronRight, 
-  ClipboardList, 
-  Home, 
-  LayoutDashboard, 
-  Receipt, 
-  ShoppingCart, 
-  Users,
-  Wallet,
-  Settings,
-  FileText,
-  BookOpen,
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  BarChart3,
   CreditCard,
-  BarChart4,
-  Package,
+  FileText,
+  Home,
+  Settings,
+  Users,
+  X,
+  BookOpen,
   Building,
-  HelpCircle,
-  X
+  Landmark,
+  Receipt,
+  FileSpreadsheet,
+  FileCog,
+  FileBarChart,
+  FileCheck,
+  FileSearch,
+  FileText2,
+  FileWarning,
+  FilePlus,
+  FileQuestion,
+  FileX,
+  FileArchive,
+  FileUp,
+  FileDown,
+  FileLock,
+  FileKey,
+  FileSignature,
+  FileOutput,
+  FileInput,
+  FileStack,
+  FileSymlink,
+  FileTerminal,
+  FileDigit,
+  FileCode,
+  FileJson,
+  FileSearch2,
+  FileWarning2,
+  FileX2,
+  FilePlus2,
+  FileQuestion2,
+  FileArchive2,
+  FileUp2,
+  FileDown2,
+  FileLock2,
+  FileKey2,
+  FileSignature2,
+  FileOutput2,
+  FileInput2,
+  FileStack2,
+  FileSymlink2,
+  FileTerminal2,
+  FileDigit2,
+  FileCode2,
+  FileJson2,
 } from 'lucide-react';
-import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Button } from './ui/button';
-
-const navigationItems = [
-  {
-    name: 'Dashboard',
-    path: '/',
-    icon: <LayoutDashboard className="h-5 w-5" />,
-    description: 'Overview of your business'
-  },
-  {
-    name: 'Day Book',
-    path: '/daybook',
-    icon: <BookOpen className="h-5 w-5" />,
-    description: 'Journal entries and transactions'
-  },
-  {
-    name: 'Sales',
-    path: '/sales',
-    icon: <Receipt className="h-5 w-5" />,
-    description: 'Manage sales and revenue'
-  },
-  {
-    name: 'Invoicing',
-    path: '/invoicing',
-    icon: <FileText className="h-5 w-5" />,
-    description: 'Create and manage invoices'
-  },
-  {
-    name: 'Purchases',
-    path: '/purchases',
-    icon: <ShoppingCart className="h-5 w-5" />,
-    description: 'Track and manage purchases'
-  },
-  {
-    name: 'Inventory',
-    path: '/inventory',
-    icon: <Package className="h-5 w-5" />,
-    description: 'Manage stock and products'
-  },
-  {
-    name: 'Ledger',
-    path: '/ledger',
-    icon: <Home className="h-5 w-5" />,
-    description: 'General ledger and accounts'
-  },
-  {
-    name: 'Reporting',
-    path: '/reporting',
-    icon: <BarChart4 className="h-5 w-5" />,
-    description: 'Financial reports and analysis'
-  },
-  {
-    name: 'Payroll',
-    path: '/payroll',
-    icon: <Users className="h-5 w-5" />,
-    description: 'Manage employee payroll'
-  },
-  {
-    name: 'Expenses',
-    path: '/expenses',
-    icon: <Wallet className="h-5 w-5" />,
-    description: 'Track business expenses'
-  },
-  {
-    name: 'Stock',
-    path: '/stock',
-    icon: <ClipboardList className="h-5 w-5" />,
-    description: 'Raw materials and finished goods'
-  },
-  {
-    name: 'Settings',
-    path: '/settings',
-    icon: <Settings className="h-5 w-5" />,
-    description: 'Configure your account'
-  },
-];
 
 interface NavigationProps {
-  isOpen?: boolean;
-  onClose?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
+const Navigation = ({ isOpen, onClose }: NavigationProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { hasPermission } = useAuth();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Close sidebar when route changes on mobile
   useEffect(() => {
-    if (isMobile && onClose && isOpen) {
-      onClose();
-    }
-  }, [location.pathname, isMobile, onClose, isOpen]);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
 
-  // Handle the sidebar display based on device and state
-  const sidebarClasses = cn(
-    "fixed h-[calc(100vh-4rem)] top-16 bottom-0 border-r border-border/40 transition-all duration-300 ease-in-out z-40 bg-background",
-    isCollapsed && !isMobile ? "w-[70px]" : "w-[240px]",
-    isMobile ? (isOpen ? "left-0" : "-left-full") : "left-0"
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const navigationItems = [
+    {
+      title: 'Dashboard',
+      href: '/',
+      icon: Home,
+      permission: null,
+    },
+    {
+      title: 'Transactions',
+      href: '/transactions',
+      icon: CreditCard,
+      permission: null,
+    },
+    {
+      title: 'Accounts',
+      href: '/accounts',
+      icon: Landmark,
+      permission: null,
+    },
+    {
+      title: 'Reports',
+      href: '/reports',
+      icon: BarChart3,
+      permission: null,
+    },
+    {
+      title: 'Invoices',
+      href: '/invoices',
+      icon: Receipt,
+      permission: null,
+    },
+    {
+      title: 'Documents',
+      href: '/documents',
+      icon: FileText,
+      permission: null,
+    },
+    {
+      title: 'Users',
+      href: '/users',
+      icon: Users,
+      permission: 'manage_users',
+    },
+    {
+      title: 'Settings',
+      href: '/settings',
+      icon: Settings,
+      permission: null,
+    },
+    {
+      title: 'Help',
+      href: '/help',
+      icon: BookOpen,
+      permission: null,
+    },
+  ];
+
+  const filteredItems = navigationItems.filter(
+    (item) => item.permission === null || hasPermission(item.permission)
   );
 
-  const handleNavigate = (path: string) => {
-    navigate(path);
-    if (isMobile && onClose) {
-      onClose();
-    }
-  };
-
-  // Add backdrop for mobile when sidebar is open
-  const backdropClasses = cn(
-    "fixed inset-0 bg-black/50 z-30 transition-opacity",
-    isMobile && isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-  );
-
-  return (
-    <>
-      {/* Backdrop for mobile */}
-      <div className={backdropClasses} onClick={onClose}></div>
-      
-      <aside className={sidebarClasses}>
-        <div className="h-full flex flex-col py-4">
-          <div className="px-4 mb-4 flex justify-between items-center">
-            {isMobile && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="md:hidden"
+  const NavigationContent = () => (
+    <div className="flex flex-col h-full" data-sidebar>
+      <div className="flex items-center justify-between px-4 py-2 border-b">
+        <div className="font-semibold">Navigation</div>
+        {isMobile && (
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="px-2 py-2">
+          <nav className="space-y-1">
+            {filteredItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={isMobile ? onClose : undefined}
+                className={cn(
+                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
+                  location.pathname === item.href
+                    ? 'bg-accent text-accent-foreground'
+                    : 'transparent'
+                )}
               >
-                <X className="h-5 w-5" />
-              </Button>
-            )}
-            
-            {!isMobile && (
-              <button 
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-1 rounded-full hover:bg-accent transition-colors ml-auto"
-              >
-                <ChevronRight className={cn(
-                  "h-4 w-4 transition-transform duration-300",
-                  isCollapsed ? "rotate-180" : ""
-                )} />
-              </button>
-            )}
-          </div>
-          
-          <nav className="flex-1 overflow-auto scrollbar-hide">
-            <ul className="space-y-1 px-2">
-              {navigationItems.map((item) => (
-                <li key={item.path}>
-                  <button
-                    onClick={() => handleNavigate(item.path)}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-300 group relative text-left",
-                      location.pathname === item.path 
-                        ? "bg-primary text-primary-foreground" 
-                        : "hover:bg-secondary"
-                    )}
-                  >
-                    <span className="flex-shrink-0">{item.icon}</span>
-                    {(!isCollapsed || isMobile) && (
-                      <span className="whitespace-nowrap overflow-hidden transition-all duration-300">
-                        {item.name}
-                      </span>
-                    )}
-                    
-                    {/* Tooltip for collapsed state */}
-                    {isCollapsed && !isMobile && (
-                      <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                        <div className="font-medium">{item.name}</div>
-                        <div className="text-xs text-muted-foreground">{item.description}</div>
-                      </div>
-                    )}
-                    
-                    {((!isCollapsed && !isMobile) || isMobile) && (
-                      <TooltipGuidance
-                        content={item.description}
-                        side="right"
-                      >
-                        <HelpCircle className="h-3 w-3 text-muted-foreground ml-auto" />
-                      </TooltipGuidance>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
+                <item.icon className="h-5 w-5" />
+                {item.title}
+              </Link>
+            ))}
           </nav>
-          
-          <div className="mt-auto px-3">
-            {(!isCollapsed || isMobile) && (
-              <div className="text-xs text-muted-foreground py-2 text-center">
-                © 2023 Om Ganapati Bag Udhyog
-              </div>
-            )}
-          </div>
         </div>
-      </aside>
-    </>
+      </ScrollArea>
+      <div className="mt-auto p-4 text-xs text-muted-foreground border-t">
+        <p>© {new Date().getFullYear()} NPL Accounts</p>
+        <p>Version 1.0.0</p>
+      </div>
+    </div>
+  );
+
+  return isMobile ? (
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent side="left" className="p-0 w-[240px]">
+        <NavigationContent />
+      </SheetContent>
+    </Sheet>
+  ) : (
+    <aside className="fixed inset-y-0 left-0 z-20 hidden md:flex flex-col w-[240px] border-r bg-background pt-16">
+      <NavigationContent />
+    </aside>
   );
 };
 

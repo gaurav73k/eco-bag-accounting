@@ -75,6 +75,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         }
         
         if (data && data.length > 0) {
+          console.log("Fetched fiscal years:", data);
           setFiscalYearsData(data);
           
           const years = data.map(fy => fy.name);
@@ -104,7 +105,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
             `${parseInt(currentFiscalYear.split('/')[0]) - 1}/${parseInt(currentFiscalYear.split('/')[1]) - 1}`
           ];
           setAvailableFiscalYears(defaultYears);
-          toast.info('Please create fiscal years using the Fiscal Year selector');
+          toast.info('No fiscal years found. Please create fiscal years using the Fiscal Year selector');
         }
       } catch (e) {
         console.error('Error in fiscal year initialization:', e);
@@ -165,6 +166,13 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       const startDate = `${firstYear}-07-01`;  // July 1st 
       const endDate = `${secondYear}-06-30`;   // June 30th
       
+      console.log("Creating fiscal year:", {
+        name: year,
+        start_date: startDate,
+        end_date: endDate,
+        is_active: false
+      });
+      
       const { data, error } = await supabase
         .from('fiscal_years')
         .insert({
@@ -181,15 +189,17 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         
         // Check if this is an RLS policy error
         if (error.code === '42501') {
-          toast.error('Permission denied: You do not have permission to create fiscal years');
+          toast.error('Permission denied: You may not have permission to create fiscal years');
         } else {
-          toast.error('Failed to create fiscal year');
+          toast.error('Failed to create fiscal year: ' + error.message);
         }
         return false;
       }
       
+      console.log("Fiscal year created:", data);
+      
       // Update local state
-      setFiscalYearsData(prev => [...prev, data]);
+      setFiscalYearsData(prev => [data, ...prev]);
       setAvailableFiscalYears(prev => [...prev, year].sort((a, b) => {
         const [yearA] = a.split('/').map(Number);
         const [yearB] = b.split('/').map(Number);
@@ -207,6 +217,8 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
   
   const updateFiscalYearStatus = async (id: string, updates: any): Promise<boolean> => {
     try {
+      console.log("Updating fiscal year:", id, updates);
+      
       // If setting a fiscal year to active, first deactivate all others
       if (updates.is_active) {
         // Deactivate all fiscal years first
@@ -227,10 +239,12 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       }
       
       // Update the specific fiscal year
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('fiscal_years')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
       
       if (error) {
         console.error('Error updating fiscal year:', error);
@@ -239,10 +253,12 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         if (error.code === '42501') {
           toast.error('Permission denied: You do not have permission to update fiscal years');
         } else {
-          toast.error('Failed to update fiscal year');
+          toast.error('Failed to update fiscal year: ' + error.message);
         }
         return false;
       }
+      
+      console.log("Fiscal year updated:", data);
       
       // Refetch fiscal years to get updated data
       const { data: refreshedData, error: refreshError } = await supabase
@@ -306,6 +322,8 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
       
+      console.log("Deleting fiscal year:", fyData.id);
+      
       // Delete the fiscal year from Supabase
       const { error } = await supabase
         .from('fiscal_years')
@@ -319,7 +337,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         if (error.code === '42501') {
           toast.error('Permission denied: You do not have permission to delete fiscal years');
         } else {
-          toast.error('Failed to delete fiscal year');
+          toast.error('Failed to delete fiscal year: ' + error.message);
         }
         return false;
       }

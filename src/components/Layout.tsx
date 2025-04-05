@@ -20,8 +20,8 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isMobile && isSidebarOpen) {
         // Check if click is outside sidebar and not on menu button
-        const sidebar = document.querySelector('aside');
-        const menuButton = document.querySelector('button[aria-label="Toggle menu"]');
+        const sidebar = document.querySelector('[data-sidebar]');
+        const menuButton = document.querySelector('[data-menu-toggle]');
         
         if (sidebar && 
             !sidebar.contains(event.target as Node) && 
@@ -51,13 +51,6 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
       window.removeEventListener('resize', handleResize);
     };
   }, [isSidebarOpen]);
-
-  // Close sidebar on route change
-  useEffect(() => {
-    if (isMobile && isSidebarOpen) {
-      setIsSidebarOpen(false);
-    }
-  }, [location.pathname, isMobile, isSidebarOpen]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background w-full">
