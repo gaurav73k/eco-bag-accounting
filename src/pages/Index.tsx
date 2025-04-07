@@ -6,6 +6,7 @@ import StatCard from '@/components/dashboard/StatCard';
 import RecentTransactionsCard from '@/components/dashboard/RecentTransactionsCard';
 import FinancialOverviewChart from '@/components/dashboard/FinancialOverviewChart';
 import InventorySummaryCard from '@/components/dashboard/InventorySummaryCard';
+import ChartOfAccounts from '@/components/ChartOfAccounts';
 import { Button } from '@/components/ui/button';
 import { ArrowDownUp, DollarSign, ShoppingCart, Package, PlusCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -73,7 +74,7 @@ const Index: React.FC = () => {
           />
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <FinancialOverviewChart 
             data={chartData} 
             className="lg:col-span-2 animate-slide-in"
@@ -88,6 +89,10 @@ const Index: React.FC = () => {
               className="animate-slide-in [animation-delay:200ms]"
             />
           </div>
+        </div>
+        
+        <div className="mt-6">
+          <ChartOfAccounts />
         </div>
       </div>
     </Layout>

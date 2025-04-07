@@ -2,7 +2,7 @@
 import React, { ReactNode, useEffect } from 'react';
 import {
   Dialog,
-  DialogContent as RadixDialogContent,
+  DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -173,7 +173,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <RadixDialogContent className={`${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
+      <DialogContent className={`${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader className="flex flex-row items-center justify-between">
           <div>
             <DialogTitle>{title}</DialogTitle>
@@ -194,7 +194,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
         <div className="py-4">
           {renderDialogContent()}
         </div>
-      </RadixDialogContent>
+      </DialogContent>
     </Dialog>
   );
 };
