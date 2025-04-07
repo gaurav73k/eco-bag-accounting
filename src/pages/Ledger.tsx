@@ -1,23 +1,21 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
 import { Button } from '@/components/ui/button';
 import { 
   PlusCircle, 
-  BookOpen, 
-  FileText, 
+  Receipt, 
   Download, 
   Upload, 
-  Filter,
-  Receipt,
+  FileText, 
+  Search, 
+  ChevronRight, 
+  ChevronsUpDown,
+  ChevronDown,
+  ArrowUpDown,
   CreditCard,
-  Repeat,
-  ShoppingCart,
-  ShoppingBag,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  XCircle,
+  Clock,
   CornerUpLeft,
   Trash2
 } from 'lucide-react';
@@ -243,7 +241,7 @@ const Ledger: React.FC = () => {
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pr-10"
                     />
-                    <Filter className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   </div>
                 </div>
               </div>

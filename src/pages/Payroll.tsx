@@ -1,32 +1,47 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   PlusCircle, 
-  Users, 
   Download, 
+  Filter, 
   Search, 
-  Filter,
-  FileText,
+  User, 
+  ChevronDown, 
+  MoreHorizontal, 
+  Trash2, 
+  Edit, 
+  Eye,
+  Users,
   Calendar,
-  Edit,
-  MoreHorizontal,
-  CheckSquare,
-  Trash2
+  DollarSign
 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -59,11 +74,9 @@ const Payroll: React.FC = () => {
   const [showProcessPayrollDialog, setShowProcessPayrollDialog] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   
-  // Replace dummy data with actual state
   const [employees, setEmployees] = useState<any[]>([]);
   const [payrollData, setPayrollData] = useState<any[]>([]);
   
-  // Bulk operations state
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
@@ -215,7 +228,6 @@ const Payroll: React.FC = () => {
     setShowProcessPayrollDialog(false);
   };
 
-  // Bulk operations handlers
   const toggleBulkMode = () => {
     setIsBulkMode(!isBulkMode);
     if (isBulkMode) {
@@ -244,7 +256,6 @@ const Payroll: React.FC = () => {
 
     if (currentTab === 'employees') {
       setEmployees(prev => prev.filter(employee => !selectedItems.includes(employee.id)));
-      // Also remove associated payroll entries
       setPayrollData(prev => prev.filter(entry => {
         const employeeId = entry.employeeId;
         return !selectedItems.includes(employeeId);
@@ -669,7 +680,6 @@ const Payroll: React.FC = () => {
         </div>
       </EntryDialog>
 
-      {/* Bulk Delete Confirmation Dialog */}
       <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
