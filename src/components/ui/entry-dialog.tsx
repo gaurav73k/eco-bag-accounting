@@ -6,64 +6,63 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { X, Loader2 } from 'lucide-react';
-import { useHistory } from '@/hooks/use-history';
-import { useAuth } from '@/contexts/AuthContext';
-import { useFiscalYear } from '@/contexts/FiscalYearContext';
-import { toast } from 'sonner';
-import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
+import { HistoryTracker } from '@/components/HistoryTracker';
+import { X, MoreVertical, History, Save, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
-interface EntryDialogProps {
+interface DialogEntryProps {
   title: string;
   description?: string;
   isOpen: boolean;
   onClose: () => void;
-  onSave?: () => void;
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  entityType: string;
+  showHistoryButton?: boolean;
+  showSaveButton?: boolean;
+  isSaving?: boolean;
+  onSave?: () => void;
+  entity?: any;
+  entityType?: string;
   entityId?: string;
-  entityName?: string;
-  isCreate?: boolean;
-  isEdit?: boolean;
-  disabled?: boolean;
-  saveLabel?: string;
-  hideFooter?: boolean;
-  showCloseButton?: boolean;
-  loading?: boolean;
+  returnPath?: string;
+  historyEnabled?: boolean;
+  actions?: Array<{
+    label: string;
+    onClick: () => void;
+    icon?: React.ReactNode;
+    disabled?: boolean;
+  }>;
 }
 
-// Export as named export
-export const EntryDialog: React.FC<EntryDialogProps> = ({
+export const DialogEntry: React.FC<DialogEntryProps> = ({
   title,
   description,
   isOpen,
   onClose,
-  onSave,
   children,
   size = 'md',
+  showHistoryButton = false,
+  showSaveButton = false,
+  isSaving = false,
+  onSave,
+  entity,
   entityType,
-  entityId = '',
-  entityName = '',
-  isCreate = false,
-  isEdit = false,
-  disabled = false,
-  saveLabel = 'Save',
-  hideFooter = false,
-  showCloseButton = true,
-  loading = false,
+  entityId,
+  returnPath,
+  historyEnabled = false,
+  actions = [],
 }) => {
   const sizeClasses = {
     sm: 'sm:max-w-md',
@@ -71,99 +70,155 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
     lg: 'sm:max-w-3xl',
     xl: 'sm:max-w-5xl',
   };
-
-  const { addHistoryEntry } = useHistory();
-  const { hasPermission } = useAuth();
-  const { fiscalYear } = useFiscalYear();
+  
   const isMobile = useIsMobile();
-
-  // Display current fiscal year in the dialog
+  const navigate = useNavigate();
+  const [showHistory, setShowHistory] = React.useState(false);
+  
+  // Handle escape key to close history panel
   useEffect(() => {
-    if (isCreate && isOpen) {
-      console.log(`Creating new entry in fiscal year: ${fiscalYear}`);
-    }
-  }, [isOpen, isCreate, fiscalYear]);
-
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showHistory) {
+        e.stopPropagation(); // Prevent dialog from closing
+        setShowHistory(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showHistory]);
+  
   const handleSave = () => {
     if (onSave) {
       onSave();
-      
-      // Log action to history based on action type
-      if (isCreate && entityName) {
-        addHistoryEntry(
-          'create', 
-          entityType, 
-          entityId || `new-${Date.now()}`, 
-          entityName,
-          `Created new ${entityType} entry in fiscal year ${fiscalYear}`
-        );
-        toast.success(`Created ${entityName} successfully`);
-      } else if (isEdit && entityName) {
-        addHistoryEntry(
-          'update', 
-          entityType, 
-          entityId, 
-          entityName,
-          `Updated ${entityType} entry details in fiscal year ${fiscalYear}`
-        );
-        toast.success(`Updated ${entityName} successfully`);
-      }
     }
   };
   
-  const canCreate = hasPermission('create_entry');
-  const canEdit = hasPermission('edit_entry');
+  const toggleHistory = () => {
+    if (!entityId || !entityType) {
+      toast.error('Entity ID or type not provided. History unavailable.');
+      return;
+    }
+    
+    setShowHistory(!showHistory);
+  };
   
-  // Determine if user should be able to save based on permissions and dialog type
-  const canSave = (isCreate && canCreate) || (isEdit && canEdit) || (!isCreate && !isEdit);
-
-  // Dialog content for both mobile and desktop
-  const renderDialogContent = () => (
-    <>
-      {children}
-      
-      {onSave && !hideFooter && (
-        <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSave} 
-            disabled={disabled || !canSave || loading}
-            variant="default"
-            className="mb-2 sm:mb-0"
+  const handleReturnToList = () => {
+    if (returnPath) {
+      navigate(returnPath);
+    } else {
+      onClose();
+    }
+  };
+  
+  const renderDialogContent = () => {
+    if (showHistory && entityId && entityType) {
+      return (
+        <div className="relative h-full">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute right-0 top-0 z-10"
+            onClick={() => setShowHistory(false)}
           >
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {saveLabel}
+            <X className="h-4 w-4 mr-1" />
+            Close History
           </Button>
+          <HistoryTracker entityId={entityId} entityType={entityType} />
         </div>
-      )}
-    </>
-  );
+      );
+    }
+    
+    return children;
+  };
 
   if (isMobile) {
     return (
       <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DrawerContent>
-          <DrawerHeader className="border-b border-border/40 pr-2">
+          <DrawerHeader className="flex flex-col space-y-0 border-b">
             <div className="flex items-center justify-between">
-              <div className="pr-8">
+              <div className="pr-8 mb-0 pb-0">
                 <DrawerTitle>{title}</DrawerTitle>
-                {description && (
-                  <DrawerDescription>
-                    {description}
-                    {isCreate && <span className="ml-1 text-primary font-medium">({fiscalYear})</span>}
-                  </DrawerDescription>
-                )}
+                {description && <DrawerDescription>{description}</DrawerDescription>}
               </div>
-              {showCloseButton && (
-                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 absolute right-4 top-4">
+              <div className="flex items-center space-x-1">
+                {showHistoryButton && historyEnabled && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleHistory}
+                    className="h-8 w-8"
+                  >
+                    <History className="h-4 w-4" />
+                  </Button>
+                )}
+                
+                {actions && actions.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {actions.map((action, index) => (
+                        <DropdownMenuItem 
+                          key={index} 
+                          onClick={action.onClick}
+                          disabled={action.disabled}
+                        >
+                          {action.icon && 
+                            <span className="mr-2 h-4 w-4">
+                              {action.icon}
+                            </span>
+                          }
+                          {action.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                
+                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
                   <X className="h-4 w-4" />
                 </Button>
-              )}
+              </div>
             </div>
+            {showSaveButton && (
+              <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                <Button
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleReturnToList}
+                  disabled={isSaving}
+                >
+                  Back
+                </Button>
+                <Button 
+                  onClick={handleSave}
+                  size="sm"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </DrawerHeader>
-          <div className="px-4 py-4 overflow-y-auto" style={{ maxHeight: 'calc(80vh - 10rem)' }}>
+          <div className="px-4 py-4 overflow-y-auto h-[calc(100vh-12rem)]">
             {renderDialogContent()}
           </div>
         </DrawerContent>
@@ -177,20 +232,80 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
         <DialogHeader className="flex flex-row items-center justify-between">
           <div>
             <DialogTitle>{title}</DialogTitle>
-            {description && (
-              <DialogDescription>
-                {description}
-                {isCreate && <span className="ml-1 text-primary font-medium">({fiscalYear})</span>}
-              </DialogDescription>
-            )}
+            {description && <DialogDescription>{description}</DialogDescription>}
           </div>
-          {showCloseButton && (
+          <div className="flex items-center space-x-1">
+            {showHistoryButton && historyEnabled && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleHistory}
+                className="h-8 w-8"
+              >
+                <History className="h-4 w-4" />
+              </Button>
+            )}
+            
+            {actions && actions.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {actions.map((action, index) => (
+                    <DropdownMenuItem 
+                      key={index} 
+                      onClick={action.onClick}
+                      disabled={action.disabled}
+                    >
+                      {action.icon && 
+                        <span className="mr-2 h-4 w-4">
+                          {action.icon}
+                        </span>
+                      }
+                      {action.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            
             <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
               <X className="h-4 w-4" />
             </Button>
-          )}
+          </div>
         </DialogHeader>
-        
+        {showSaveButton && (
+          <div className="flex items-center justify-between pt-2 pb-4 border-b">
+            <Button
+              variant="outline" 
+              size="sm"
+              onClick={handleReturnToList}
+              disabled={isSaving}
+            >
+              Back
+            </Button>
+            <Button 
+              onClick={handleSave}
+              size="sm"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </>
+              )}
+            </Button>
+          </div>
+        )}
         <div className="py-4">
           {renderDialogContent()}
         </div>
@@ -199,4 +314,4 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
   );
 };
 
-export default EntryDialog;
+export default DialogEntry;
