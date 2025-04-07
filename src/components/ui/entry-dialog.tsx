@@ -2,7 +2,7 @@
 import React, { ReactNode, useEffect } from 'react';
 import {
   Dialog,
-  DialogContent,
+  DialogContent as RadixDialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -118,7 +118,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
   const canSave = (isCreate && canCreate) || (isEdit && canEdit) || (!isCreate && !isEdit);
 
   // Dialog content for both mobile and desktop
-  const DialogContent = (
+  const renderDialogContent = () => (
     <>
       {children}
       
@@ -164,7 +164,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
             </div>
           </DrawerHeader>
           <div className="px-4 py-4 overflow-y-auto" style={{ maxHeight: 'calc(80vh - 10rem)' }}>
-            {DialogContent}
+            {renderDialogContent()}
           </div>
         </DrawerContent>
       </Drawer>
@@ -173,7 +173,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={`${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
+      <RadixDialogContent className={`${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader className="flex flex-row items-center justify-between">
           <div>
             <DialogTitle>{title}</DialogTitle>
@@ -192,9 +192,9 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
         </DialogHeader>
         
         <div className="py-4">
-          {DialogContent}
+          {renderDialogContent()}
         </div>
-      </DialogContent>
+      </RadixDialogContent>
     </Dialog>
   );
 };

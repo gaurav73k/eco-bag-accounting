@@ -2,7 +2,7 @@
 import React, { ReactNode } from 'react';
 import {
   Dialog,
-  DialogContent,
+  DialogContent as RadixDialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
@@ -74,7 +74,7 @@ export const DialogForm: React.FC<DialogFormProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={`${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
+      <RadixDialogContent className={`${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader className="flex flex-row items-center justify-between">
           <div>
             <DialogTitle>{title}</DialogTitle>
@@ -89,7 +89,7 @@ export const DialogForm: React.FC<DialogFormProps> = ({
         <div className="py-4">
           {children}
         </div>
-      </DialogContent>
+      </RadixDialogContent>
     </Dialog>
   );
 };
