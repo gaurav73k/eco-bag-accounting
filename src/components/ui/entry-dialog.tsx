@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useEffect } from 'react';
 import {
   Dialog,
@@ -17,7 +16,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { HistoryTracker } from '@/components/HistoryTracker';
+import HistoryTracker from '@/components/HistoryTracker';
 import { X, MoreVertical, History, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -44,6 +43,10 @@ interface DialogEntryProps {
     icon?: React.ReactNode;
     disabled?: boolean;
   }>;
+  isCreate?: boolean;
+  isEdit?: boolean;
+  hideFooter?: boolean;
+  entityName?: string;
 }
 
 export const DialogEntry: React.FC<DialogEntryProps> = ({
@@ -63,6 +66,10 @@ export const DialogEntry: React.FC<DialogEntryProps> = ({
   returnPath,
   historyEnabled = false,
   actions = [],
+  isCreate = false,
+  isEdit = false,
+  hideFooter = false,
+  entityName = '',
 }) => {
   const sizeClasses = {
     sm: 'sm:max-w-md',
@@ -75,11 +82,10 @@ export const DialogEntry: React.FC<DialogEntryProps> = ({
   const navigate = useNavigate();
   const [showHistory, setShowHistory] = React.useState(false);
   
-  // Handle escape key to close history panel
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && showHistory) {
-        e.stopPropagation(); // Prevent dialog from closing
+        e.stopPropagation();
         setShowHistory(false);
       }
     };
@@ -188,7 +194,7 @@ export const DialogEntry: React.FC<DialogEntryProps> = ({
                 </Button>
               </div>
             </div>
-            {showSaveButton && (
+            {showSaveButton && !hideFooter && (
               <div className="flex items-center justify-between mt-2 pt-2 border-t">
                 <Button
                   variant="outline" 
@@ -277,7 +283,7 @@ export const DialogEntry: React.FC<DialogEntryProps> = ({
             </Button>
           </div>
         </DialogHeader>
-        {showSaveButton && (
+        {showSaveButton && !hideFooter && (
           <div className="flex items-center justify-between pt-2 pb-4 border-b">
             <Button
               variant="outline" 

@@ -21,7 +21,7 @@ import {
   CornerUpLeft,
   Trash2
 } from 'lucide-react';
-import EntryDialog from '@/components/ui/entry-dialog';
+import DialogEntry from '@/components/ui/entry-dialog';
 import TallyEntryForm from '@/components/forms/TallyEntryForm';
 import { toast } from 'sonner';
 import { 

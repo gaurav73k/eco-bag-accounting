@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -28,7 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
-import { EntryDialog } from '@/components/ui/entry-dialog';
+import DialogEntry from '@/components/ui/entry-dialog';
 import ExpenseForm from '@/components/forms/ExpenseForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { Checkbox } from '@/components/ui/checkbox';
