@@ -9,11 +9,21 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { useHistory } from '@/hooks/use-history';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 
 interface EntryDialogProps {
   title: string;
@@ -32,6 +42,7 @@ interface EntryDialogProps {
   saveLabel?: string;
   hideFooter?: boolean;
   showCloseButton?: boolean;
+  loading?: boolean;
 }
 
 // Export as named export
@@ -52,6 +63,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
   saveLabel = 'Save',
   hideFooter = false,
   showCloseButton = true,
+  loading = false,
 }) => {
   const sizeClasses = {
     sm: 'sm:max-w-md',
@@ -63,6 +75,7 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
   const { addHistoryEntry } = useHistory();
   const { hasPermission } = useAuth();
   const { fiscalYear } = useFiscalYear();
+  const isMobile = useIsMobile();
 
   // Display current fiscal year in the dialog
   useEffect(() => {
@@ -104,6 +117,60 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
   // Determine if user should be able to save based on permissions and dialog type
   const canSave = (isCreate && canCreate) || (isEdit && canEdit) || (!isCreate && !isEdit);
 
+  // Dialog content for both mobile and desktop
+  const DialogContent = (
+    <>
+      {children}
+      
+      {onSave && !hideFooter && (
+        <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            disabled={disabled || !canSave || loading}
+            variant="default"
+            className="mb-2 sm:mb-0"
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {saveLabel}
+          </Button>
+        </div>
+      )}
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DrawerContent>
+          <DrawerHeader className="border-b border-border/40 pr-2">
+            <div className="flex items-center justify-between">
+              <div className="pr-8">
+                <DrawerTitle>{title}</DrawerTitle>
+                {description && (
+                  <DrawerDescription>
+                    {description}
+                    {isCreate && <span className="ml-1 text-primary font-medium">({fiscalYear})</span>}
+                  </DrawerDescription>
+                )}
+              </div>
+              {showCloseButton && (
+                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 absolute right-4 top-4">
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </DrawerHeader>
+          <div className="px-4 py-4 overflow-y-auto" style={{ maxHeight: 'calc(80vh - 10rem)' }}>
+            {DialogContent}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className={`${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
@@ -125,23 +192,8 @@ export const EntryDialog: React.FC<EntryDialogProps> = ({
         </DialogHeader>
         
         <div className="py-4">
-          {children}
+          {DialogContent}
         </div>
-        
-        {onSave && !hideFooter && (
-          <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSave} 
-              disabled={disabled || !canSave}
-              variant="default"
-            >
-              {saveLabel}
-            </Button>
-          </DialogFooter>
-        )}
       </DialogContent>
     </Dialog>
   );

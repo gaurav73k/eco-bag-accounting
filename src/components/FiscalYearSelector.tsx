@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Calendar, Plus, Trash2, X, Check, FileEdit, CalendarDays } from 'lucide-react';
+import { Calendar, Plus, Trash2, X, Check, FileEdit, CalendarDays, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   AlertDialog,
@@ -51,6 +51,7 @@ const FiscalYearSelector = () => {
   const [fiscalYearToEdit, setFiscalYearToEdit] = useState<any>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   
   const canManageFiscalYear = hasPermission('manage_fiscal_year');
   
@@ -85,23 +86,29 @@ const FiscalYearSelector = () => {
       return;
     }
     
-    if (!newFiscalYear.match(/^\d{4}\/\d{4}$/)) {
-      toast.error('Fiscal year must be in format YYYY/YYYY');
-      return;
-    }
-    
-    const success = await addFiscalYear(newFiscalYear);
-    if (success) {
-      setNewFiscalYear('');
-      setIsAddDialogOpen(false);
+    setIsSaving(true);
+    try {
+      const success = await addFiscalYear(newFiscalYear);
+      if (success) {
+        setNewFiscalYear('');
+        setIsAddDialogOpen(false);
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
   
   const handleDeleteYear = async () => {
     if (!yearToDelete) return;
-    const success = await deleteFiscalYear(yearToDelete);
-    if (success) {
-      setIsDeleteConfirmOpen(false);
+    
+    setIsSaving(true);
+    try {
+      const success = await deleteFiscalYear(yearToDelete);
+      if (success) {
+        setIsDeleteConfirmOpen(false);
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
   
@@ -128,6 +135,7 @@ const FiscalYearSelector = () => {
       return;
     }
     
+    setIsSaving(true);
     try {
       const success = await updateFiscalYearStatus(fiscalYearToEdit.id, {
         start_date: startDate,
@@ -141,10 +149,13 @@ const FiscalYearSelector = () => {
     } catch (error) {
       console.error('Error updating fiscal year:', error);
       toast.error('Failed to update fiscal year');
+    } finally {
+      setIsSaving(false);
     }
   };
   
   const handleToggleActiveFiscalYear = async (yearData: any) => {
+    setIsSaving(true);
     try {
       const success = await updateFiscalYearStatus(yearData.id, {
         is_active: !yearData.is_active
@@ -160,6 +171,8 @@ const FiscalYearSelector = () => {
     } catch (error) {
       console.error('Error toggling fiscal year status:', error);
       toast.error('Failed to update fiscal year status');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -178,7 +191,7 @@ const FiscalYearSelector = () => {
     <div className="py-4 space-y-4">
       {loading ? (
         <div className="flex justify-center py-4">
-          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       ) : (
         <>
@@ -194,11 +207,17 @@ const FiscalYearSelector = () => {
                 <SelectValue placeholder="Select fiscal year" />
               </SelectTrigger>
               <SelectContent>
-                {availableFiscalYears.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
+                {availableFiscalYears.length > 0 ? (
+                  availableFiscalYears.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>
+                    No fiscal years available
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -221,7 +240,7 @@ const FiscalYearSelector = () => {
                 <CardDescription>Add, edit or remove fiscal years</CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0">
-                <div className={`${isMobile ? 'max-h-[40vh]' : 'max-h-40'} overflow-y-auto mb-2`}>
+                <div className={`${isMobile ? 'max-h-[40vh]' : 'max-h-80'} overflow-y-auto mb-2`}>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -231,8 +250,8 @@ const FiscalYearSelector = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {availableFiscalYears.length > 0 ? (
-                        fiscalYearsData?.map((yearData: any) => (
+                      {fiscalYearsData?.length > 0 ? (
+                        fiscalYearsData.map((yearData: any) => (
                           <TableRow key={yearData.id}>
                             <TableCell>{yearData.name}</TableCell>
                             <TableCell>
@@ -251,6 +270,7 @@ const FiscalYearSelector = () => {
                                   className="h-7 w-7"
                                   title={yearData.is_active ? 'Deactivate' : 'Activate'}
                                   onClick={() => handleToggleActiveFiscalYear(yearData)}
+                                  disabled={isSaving}
                                 >
                                   {yearData.is_active ? 
                                     <X className="h-4 w-4 text-red-500" /> : 
@@ -263,6 +283,7 @@ const FiscalYearSelector = () => {
                                   className="h-7 w-7"
                                   title="Edit fiscal year"
                                   onClick={() => handleEditYear(yearData)}
+                                  disabled={isSaving}
                                 >
                                   <FileEdit className="h-4 w-4" />
                                 </Button>
@@ -274,7 +295,7 @@ const FiscalYearSelector = () => {
                                     setYearToDelete(yearData.name);
                                     setIsDeleteConfirmOpen(true);
                                   }}
-                                  disabled={yearData.name === fiscalYear || yearData.is_active}
+                                  disabled={yearData.name === fiscalYear || yearData.is_active || isSaving}
                                   title={yearData.name === fiscalYear ? "Can't delete current fiscal year" : yearData.is_active ? "Can't delete active fiscal year" : "Delete fiscal year"}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -298,6 +319,7 @@ const FiscalYearSelector = () => {
                   size="sm"
                   className="w-full mt-2"
                   onClick={() => setIsAddDialogOpen(true)}
+                  disabled={isSaving}
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add New Fiscal Year
@@ -345,7 +367,11 @@ const FiscalYearSelector = () => {
               <FiscalYearContent />
             </div>
             <DrawerFooter>
-              <Button onClick={handleSaveFiscalYear} disabled={loading}>
+              <Button 
+                onClick={handleSaveFiscalYear} 
+                disabled={loading || isSaving || availableFiscalYears.length === 0}
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                 Save Changes
               </Button>
               <DrawerClose asChild>
@@ -371,7 +397,12 @@ const FiscalYearSelector = () => {
             <FiscalYearContent />
             
             <DialogFooter>
-              <Button type="submit" onClick={handleSaveFiscalYear} disabled={loading}>
+              <Button 
+                type="submit" 
+                onClick={handleSaveFiscalYear} 
+                disabled={loading || isSaving || availableFiscalYears.length === 0}
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                 Save
               </Button>
             </DialogFooter>
@@ -401,10 +432,11 @@ const FiscalYearSelector = () => {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(false)}>
+            <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(false)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button size="sm" onClick={handleAddNewYear}>
+            <Button size="sm" onClick={handleAddNewYear} disabled={isSaving}>
+              {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Add
             </Button>
           </DialogFooter>
@@ -446,10 +478,11 @@ const FiscalYearSelector = () => {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateFiscalYear}>
+            <Button onClick={handleUpdateFiscalYear} disabled={isSaving}>
+              {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Save Changes
             </Button>
           </DialogFooter>
@@ -466,8 +499,13 @@ const FiscalYearSelector = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteYear} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogCancel disabled={isSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteYear} 
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -110,13 +111,6 @@ const Navigation: React.FC<NavigationProps> = ({ isOpen = false, onClose }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isCollapsed, setIsCollapsed] = useState(false);
-
-  useEffect(() => {
-    if (isMobile && onClose && isOpen) {
-      // We want to keep the menu open if the user navigates on mobile
-      // This was previously closing the menu on any route change
-    }
-  }, [location.pathname, isMobile, onClose, isOpen]);
 
   // Handle the sidebar display based on device and state
   const sidebarClasses = cn(

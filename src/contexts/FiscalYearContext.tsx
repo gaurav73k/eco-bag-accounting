@@ -31,8 +31,6 @@ export const useFiscalYear = () => {
 // Get current fiscal year
 const getCurrentFiscalYear = (): string => {
   const now = new Date();
-  // In most organizations, fiscal year starts in April (month index 3) or July (month index 6)
-  // For this implementation, we'll use July as the fiscal year start
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
   
@@ -98,13 +96,16 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         } else {
-          // If no fiscal years in the database, use local data only
-          const defaultYears = [
-            currentFiscalYear,
-            `${parseInt(currentFiscalYear.split('/')[0]) - 1}/${parseInt(currentFiscalYear.split('/')[1]) - 1}`
-          ];
-          setAvailableFiscalYears(defaultYears);
-          toast.info('Please create fiscal years using the Fiscal Year selector');
+          // If no fiscal years in the database, use current fiscal year
+          // and prompt to create in the UI instead of using dummy data
+          const defaultYear = currentFiscalYear;
+          setAvailableFiscalYears([defaultYear]);
+          
+          // Try to create a default fiscal year
+          const success = await setupDefaultFiscalYear(currentFiscalYear);
+          if (!success) {
+            toast.info('Please create fiscal years using the Fiscal Year selector');
+          }
         }
       } catch (e) {
         console.error('Error in fiscal year initialization:', e);
@@ -116,6 +117,54 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
     
     fetchFiscalYears();
   }, []);
+
+  // Helper function to set up a default fiscal year
+  const setupDefaultFiscalYear = async (year: string): Promise<boolean> => {
+    try {
+      const [firstYear, secondYear] = year.split('/').map(Number);
+      
+      // Validate that we have valid years
+      if (!firstYear || !secondYear) {
+        return false;
+      }
+      
+      const startDate = `${firstYear}-07-01`;  // July 1st 
+      const endDate = `${secondYear}-06-30`;   // June 30th
+      
+      const { data, error } = await supabase
+        .from('fiscal_years')
+        .insert({
+          name: year,
+          start_date: startDate,
+          end_date: endDate,
+          is_active: true
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating default fiscal year:', error);
+        return false;
+      }
+      
+      if (data) {
+        setFiscalYearsData([data]);
+        setAvailableFiscalYears([data.name]);
+        setFiscalYearState(data.name);
+        setFiscalYearId(data.id);
+        setFiscalYearData(data);
+        localStorage.setItem('selectedFiscalYear', data.name);
+        localStorage.setItem('selectedFiscalYearId', data.id);
+        localStorage.setItem('hasSelectedFiscalYear', 'true');
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      console.error('Error setting up default fiscal year:', e);
+      return false;
+    }
+  };
 
   const setFiscalYear = (year: string) => {
     // Find the fiscal year data for the selected year
@@ -181,7 +230,6 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Error creating fiscal year:', error);
         
-        // Fixed error message and handling
         if (error.code === '42501') {
           toast.error('Permission denied: You do not have permission to create fiscal years');
         } else if (error.code === '23505') {
@@ -275,7 +323,7 @@ export const FiscalYearProvider = ({ children }: { children: ReactNode }) => {
         setFiscalYearData(data);
       }
       
-      // Refetch fiscal years to get updated data
+      // Refresh fiscal years data
       const { data: refreshedData, error: refreshError } = await supabase
         .from('fiscal_years')
         .select('*')

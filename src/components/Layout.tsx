@@ -38,6 +38,13 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
     };
   }, [isMobile, isSidebarOpen]);
 
+  // Close sidebar on route change on mobile
+  useEffect(() => {
+    if (isMobile && isSidebarOpen) {
+      setIsSidebarOpen(false);
+    }
+  }, [location.pathname]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background w-full">
       <Header onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
