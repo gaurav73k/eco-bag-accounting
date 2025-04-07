@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -17,7 +18,14 @@ import {
   CreditCard,
   Clock,
   CornerUpLeft,
-  Trash2
+  Trash2,
+  Repeat,
+  BookOpen,
+  ShoppingCart,
+  ShoppingBag,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  XCircle
 } from 'lucide-react';
 import { EntryDialog } from '@/components/ui/entry-dialog';
 import TallyEntryForm from '@/components/forms/TallyEntryForm';

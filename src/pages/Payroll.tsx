@@ -16,7 +16,9 @@ import {
   Eye,
   Users,
   Calendar,
-  DollarSign
+  DollarSign,
+  CheckSquare,
+  FileText
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -61,6 +63,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Payroll: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

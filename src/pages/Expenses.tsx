@@ -1,9 +1,25 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PageTitle from '@/components/PageTitle';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Download, Filter, Search, Receipt, ChevronDown, MoreHorizontal, Trash2, Edit, Eye } from 'lucide-react';
+import { 
+  PlusCircle, 
+  Download, 
+  Filter, 
+  Search, 
+  Receipt, 
+  ChevronDown, 
+  MoreHorizontal, 
+  Trash2, 
+  Edit, 
+  Eye,
+  Wallet,
+  CheckSquare,
+  Trash,
+  FileText,
+  PieChart
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -35,6 +51,7 @@ import { EntryDialog } from '@/components/ui/entry-dialog';
 import ExpenseForm from '@/components/forms/ExpenseForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Expenses: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
