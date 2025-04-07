@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { exportToCSV, getFormattedDate } from '@/utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
-import DialogEntry from '@/components/ui/entry-dialog';
+import { EntryDialog } from '@/components/ui/entry-dialog';
 import EmployeePayrollForm from '@/components/forms/EmployeePayrollForm';
 import EmployeeForm from '@/components/forms/EmployeeForm';
 import { Checkbox } from '@/components/ui/checkbox';

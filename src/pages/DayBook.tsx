@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import DialogEntry from '@/components/ui/entry-dialog';
+import { EntryDialog } from '@/components/ui/entry-dialog';
 import TallyEntryForm from '@/components/forms/TallyEntryForm';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';

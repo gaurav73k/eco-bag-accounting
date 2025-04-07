@@ -8,7 +8,12 @@ import { History, X } from 'lucide-react';
 import { useHistory, HistoryEntry } from '@/hooks/use-history';
 import { useAuth } from '@/contexts/AuthContext';
 
-const HistoryTracker: React.FC = () => {
+interface HistoryTrackerProps {
+  entityId?: string;
+  entityType?: string;
+}
+
+const HistoryTracker: React.FC<HistoryTrackerProps> = ({ entityId, entityType }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filterType, setFilterType] = useState<string | null>(null);
   const { history } = useHistory();

@@ -1,3 +1,4 @@
+
 import React, { ReactNode, useEffect } from 'react';
 import {
   Dialog,
@@ -319,5 +320,8 @@ export const DialogEntry: React.FC<DialogEntryProps> = ({
     </Dialog>
   );
 };
+
+// Create alias for compatibility with existing code
+export const EntryDialog = DialogEntry;
 
 export default DialogEntry;
