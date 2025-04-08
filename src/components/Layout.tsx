@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import Header from './Header';
-import AppSidebar from './AppSidebar';
+import Navigation from './Navigation';
 import UserManual from './UserManual';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { SidebarProvider } from '@/components/ui/sidebar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -47,24 +46,22 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
   }, [isMobile, isSidebarOpen]);
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col bg-background w-full">
-        <Header onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
-        <div className="flex flex-1 relative overflow-hidden">
-          <AppSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-          <main className={cn(
-            "flex-1 transition-all duration-300 ease-in-out min-h-screen pt-16",
-            isMobile ? "w-full" : "ml-[240px]",
-            className
-          )}>
-            <div className="container mx-auto p-2 md:p-6">
-              {children}
-            </div>
-          </main>
-        </div>
-        <UserManual />
+    <div className="min-h-screen flex flex-col bg-background w-full">
+      <Header onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
+      <div className="flex flex-1 relative overflow-hidden">
+        <Navigation isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <main className={cn(
+          "flex-1 transition-all duration-300 ease-in-out min-h-screen pt-16",
+          isMobile ? "w-full" : "ml-[240px]",
+          className
+        )}>
+          <div className="container mx-auto p-2 md:p-6">
+            {children}
+          </div>
+        </main>
       </div>
-    </SidebarProvider>
+      <UserManual />
+    </div>
   );
 };
 
