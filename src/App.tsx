@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +23,8 @@ import SiteSettings from "./pages/SiteSettings";
 import ResetPassword from "./pages/ResetPassword";
 import RoleManagement from "./components/RoleManagement";
 import Reporting from "./pages/Reporting";
+import CRM from "./pages/CRM";
+import Workflow from "./pages/Workflow";
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -37,7 +38,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (!isAuthenticated) {
-    // Save the location they were trying to go to for a successful login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
@@ -77,8 +77,6 @@ const AuthWrapper = () => {
     </div>;
   }
   
-  // If user is authenticated and trying to access login/reset-password pages,
-  // redirect them to homepage
   if (isAuthenticated && 
       (location.pathname === '/login' || location.pathname === '/reset-password')) {
     return <Navigate to="/" replace />;
@@ -134,6 +132,10 @@ const AppRoutes = () => {
       <Route path="/expenses/edit/:id" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
       <Route path="/reporting" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
       <Route path="/reporting/:reportType" element={<ProtectedRoute><Reporting /></ProtectedRoute>} />
+      <Route path="/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
+      <Route path="/crm/customer/:customerId" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
+      <Route path="/workflow" element={<ProtectedRoute><Workflow /></ProtectedRoute>} />
+      <Route path="/workflow/:workflowId" element={<ProtectedRoute><Workflow /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
       <Route path="/site-settings" element={
         <AdminRoute requiredPermission="manage_users">

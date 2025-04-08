@@ -20,7 +20,9 @@ import {
   Package,
   Building,
   HelpCircle,
-  X
+  X,
+  UserCircle,
+  Briefcase
 } from 'lucide-react';
 import { TooltipGuidance } from '@/components/ui/tooltip-guidance';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -92,6 +94,18 @@ const navigationItems = [
     path: '/stock',
     icon: <ClipboardList className="h-5 w-5" />,
     description: 'Raw materials and finished goods'
+  },
+  {
+    name: 'CRM',
+    path: '/crm',
+    icon: <UserCircle className="h-5 w-5" />,
+    description: 'Customer relationship management'
+  },
+  {
+    name: 'Workflow',
+    path: '/workflow',
+    icon: <Briefcase className="h-5 w-5" />,
+    description: 'Business process workflows'
   },
   {
     name: 'Settings',
